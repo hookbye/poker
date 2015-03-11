@@ -16,6 +16,8 @@ public:
 	bool initPlayers();
 	bool initPokers();
 	void checkPokers();
+	void dealPokers();
+	void dealPokerCallback(CCObject* sender);
     CREATE_FUNC(GameScene);
 private:
 	Player* player;
@@ -25,5 +27,7 @@ private:
 	Player* deck;
 	
 	CCArray* pokers;
+	CCArray* players;
+	int turnCount;
 };
 

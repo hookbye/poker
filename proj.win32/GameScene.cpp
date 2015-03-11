@@ -1,14 +1,18 @@
 #include "GameScene.h"
 
 USING_NS_CC;
-GameScene::GameScene()
+GameScene::GameScene():turnCount(0)
 {
 	pokers = CCArray::create();
 	pokers->retain();
+	players = CCArray::create();
+	players->retain();
+
 }
 GameScene::~GameScene()
 {
 	CC_SAFE_RELEASE(pokers);
+	CC_SAFE_RELEASE(players);
 }
 CCScene* GameScene::scene()
 {
@@ -58,7 +62,8 @@ bool GameScene::init()
 	initPokers();
 	checkPokers();
 
-
+	deck->getPokers()->addObjectsFromArray(pokers);
+	deck->updatePokerLoc();
     return true;
 }
 bool GameScene::initPlayers()
@@ -70,25 +75,31 @@ bool GameScene::initPlayers()
 	player->setType(PLAYER);
 	player->setPosition(ccp(size.width/2,0));
 	addChild(player);
+	players->addObject(player);
 	
 	npcOne = Player::create();
 	npcOne->retain();
 	npcOne->setType(NPC);
 	npcOne->setPosition(ccp(0,size.height/2));
+	npcOne->setRotation(90);
 	addChild(npcOne);
+	players->addObject(npcOne);
 
 	npcTwo = Player::create();
 	npcTwo->retain();
 	npcOne->setType(NPC);
 	npcTwo->setPosition(ccp(size.width,size.height/2));
+	npcTwo->setRotation(270);
 	addChild(npcTwo);
-	
+	players->addObject(npcTwo);
+
 	deck = Player::create();
 	deck->retain();
 	deck->setType(DECK);
 	deck->setPosition(ccp(size.width/2,size.height/2));
 	addChild(deck);
-	
+	players->addObject(deck);
+
 	return true;
 }
 bool GameScene::initPokers()
@@ -103,19 +114,58 @@ bool GameScene::initPokers()
 			//addChild(poker);
 		}
 	}
-	deck->getPokers()->addObjectsFromArray(pokers);
-	deck->updatePokerLoc();
+	
 	return true;
 }
 void GameScene::checkPokers()
 {
+	Poker* pk;
+	Poker* pk1;
+	CCObject* object;
+	CCARRAY_FOREACH(pokers,object)
+	{
+		pk = (Poker*)object;
+		pk1 = (Poker*)pokers->randomObject();
+		if (pk != pk1)
+		{
+			pokers->exchangeObject(pk,pk1);
+		}
+	}
+}
+void GameScene::dealPokers()
+{
+	if (pokers->count()<1)
+	{
+		return;
+	}
+	CCPoint pos;
+	Poker* pk = (Poker*)pokers->objectAtIndex(pokers->count()-1);
+	pokers->removeObject(pk);
+	Player* temp = (Player*)players->objectAtIndex(turnCount++%3);
+	
+	pos = deck->convertToNodeSpaceAR(temp->getPosition());
+	temp->getPokers()->addObject(pk);
+	pk->setTag((turnCount-1)%3);	
+	
+	CCMoveTo* move = CCMoveTo::create(0.5f,pos);
+	CCCallFuncO* callback = CCCallFuncO::create(this,SEL_CallFuncO(&GameScene::dealPokerCallback),pk);
+	CCSequence* seq = CCSequence::createWithTwoActions(move,callback);
+	pk->runAction(seq);
+
+}
+void GameScene::dealPokerCallback(CCObject* sender)
+{
+	Poker* pk = (Poker*)sender;
+	((Player*)players->objectAtIndex(pk->getTag()))->updatePokerLoc();
+	dealPokers();
 }
 void GameScene::menuCloseCallback(CCObject* pSender)
 {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT) || (CC_TARGET_PLATFORM == CC_PLATFORM_WP8)
 	CCMessageBox("You pressed the close button. Windows Store Apps do not implement a close button.","Alert");
 #else
-    CCDirector::sharedDirector()->end();
+    //CCDirector::sharedDirector()->end();
+	dealPokers();
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     exit(0);
 #endif
