@@ -1,4 +1,5 @@
-#pragma once
+﻿#pragma once
+#define TURNTIME 2
 const int PokerW = 71;
 const int PokerH = 96;
 const int PokerB = 20;
@@ -24,9 +25,30 @@ enum PokerNum{
 	A,
 	TWO,
 };
-
+enum PokerClass{
+	DANZHANG,
+	DUIZI,
+	SANTIAO,
+	SANDAIYI,
+	SANDAIER,
+	LIANDUI,
+	FEIJI,
+	SHUNZI,
+	ZHADAN,
+	SHUANGWANG,
+};
 enum PlayerType{
 	PLAYER,
 	NPC,
+	FRONT,
 	DECK,
 };
+
+enum PlayerStatus{
+	DEALCARD,
+	CALL,
+	OUTCARD,
+};
+
+
+

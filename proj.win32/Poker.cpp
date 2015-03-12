@@ -1,6 +1,7 @@
 #include "Poker.h"
 
-Poker::Poker():m_isFront(true)
+Poker::Poker():m_isFront(true),m_isSel(false),m_color(SPADE),
+	m_name(NULL),m_num(A),m_canTouch(false)
 {
 }
 Poker::~Poker()
@@ -49,20 +50,36 @@ void Poker::setBack()
 		setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName("poker_6_1.png"));
 	}
 }
-void Poker::onEnter()
+void Poker::setPokerPriority(int num)
 {
-	CCSprite::onEnter();
-	CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this,1,true);
+	//CCDirector::sharedDirector()->getTouchDispatcher()->setPriority(num,this); ;
 }
-void Poker::onExit()
+void Poker::setSelect()
 {
-	CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(this);
-	CCSprite::onExit();
+	if(m_isSel)
+	{
+		setPositionY(getPositionY()-10);
+	}else
+	{
+		setPositionY(getPositionY()+10);
+	}
+	m_isSel = !m_isSel;
 }
 
 bool Poker::ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent)
 {
-	return true;
+	CCPoint pos = convertToNodeSpaceAR(pTouch->getLocation());
+	CCRect rect(-PokerW/2,-PokerH/2,PokerW,PokerH);
+
+	if(rect.containsPoint(pos)&&m_canTouch)
+	{
+		setSelect();
+		return true;
+	}else
+	{
+		return false;
+	}
+	
 }
 void Poker::ccTouchMoved(CCTouch* pTouch,CCEvent* pEvent)
 {
@@ -72,4 +89,15 @@ void Poker::ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent)
 }
 void Poker::ccTouchCancelled(CCTouch* pTouch,CCEvent* pEvent)
 {
+}
+
+void Poker::onEnter()
+{
+	CCSprite::onEnter();
+	CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this,-1,true);
+}
+void Poker::onExit()
+{
+	CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(this);
+	CCSprite::onExit();
 }

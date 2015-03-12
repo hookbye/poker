@@ -21,6 +21,7 @@
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Poker.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Tool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -38,5 +39,6 @@
       <Filter>Classes</Filter>
     </ClInclude>
     <ClInclude Include="Player.h" />
+    <ClInclude Include="Tool.h" />
   </ItemGroup>
 </Project>
