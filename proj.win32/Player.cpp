@@ -59,6 +59,7 @@ void Player::menuCallback(CCObject* pSender)
 	Poker* pk;
 	if(tag == 4)
 	{
+		outs->removeAllObjects();
 		for(int i=0;i<pokers->count();i++)
 		{
 			pk = (Poker*)pokers->objectAtIndex(i);
