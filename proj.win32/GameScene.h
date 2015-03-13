@@ -19,6 +19,17 @@ public:
 	void dealPokers();
 	void dealPokerCallback(CCObject* sender);
 
+	void pass();
+	void setLandLord();
+
+	void movePokerTo(Player* src,Player* dest,int index = -1);
+
+	//获得牌型                        src         类型     最小值   最小值
+	CCArray* getPokersByCly(CCArray* pks,PokerClass cly,int num=1,int low=0,bool caipai = true);
+	CCArray* getDanZhangs(CCArray* pks);
+	CCArray* getDuiZis(CCArray* pks);
+	CCArray* getSanTiaos(CCArray* pks);
+	 
 	virtual bool ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchMoved(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent);
@@ -33,6 +44,7 @@ private:
 	Player* frontThree;
 	Player* deck;
 	
+	PokerClass paixing;
 	CCArray* pokers;
 	CCArray* players;
 	int turnCount;
@@ -40,6 +52,7 @@ private:
 	bool isDealing;
 	bool isCalling;
 	int callCount;
+	int round;
 	
 	CCLabelTTF* timer;
 };

@@ -2,14 +2,13 @@
 #include "Poker.h"
 #include "GameScene.h"
 #include "Tool.h"
-Player::Player(void):gameScene(NULL),front(NULL),status(DEALCARD)
+Player::Player(void):gameMain(NULL),front(NULL),status(DEALCARD),isLord(false)
 {
 	pokers = CCArray::create();
 	pokers->retain();
 	outs = CCArray::create();
 	outs->retain();
 }
-
 
 Player::~Player(void)
 {
@@ -32,7 +31,7 @@ bool Player::init()
 		CCArray* menuItems = CCArray::create(oneScore,twoScore,threeScore,notCall,NULL); 
 		callMenu = CCMenu::createWithArray(menuItems);
 		callMenu->alignItemsHorizontallyWithPadding(5.0f);
-		callMenu->setPosition(0,PokerH*2);
+		callMenu->setPosition(0,PokerH*1.5);
 		addChild(callMenu);
 		//callMenu->setVisible(false);
 		menuItems->release();
@@ -44,7 +43,7 @@ bool Player::init()
 		menuItems = CCArray::create(outCard,pass,NULL); 
 		turnMenu = CCMenu::createWithArray(menuItems);
 		turnMenu->alignItemsHorizontallyWithPadding(5.0f);
-		turnMenu->setPosition(0,PokerH*2);
+		turnMenu->setPosition(0,PokerH*1.5);
 		addChild(turnMenu);
 		/*turnMenu->setVisible(false);*/
 		menuItems->release();
@@ -57,7 +56,28 @@ void Player::menuCallback(CCObject* pSender)
 {
 	int tag = ((CCMenuItem*)pSender)->getTag();
 	Poker* pk;
-	if(tag == 4)
+	if(tag == 5 || tag == 0)
+	{
+		CCArray* ar = gameMain->getDuiZis(pokers);
+		CCObject* obj;
+		CCARRAY_FOREACH(ar,obj)
+		{
+			CCLog("sigles ::   %d",((Poker*)obj)->getNum());
+		}
+		CCLog("===============================================");
+		gameMain->pass();
+	}
+	else if(tag < 3)
+	{
+		callScore = tag;
+		gameMain->pass();
+	}
+	else if(tag == 3)
+	{
+		callScore = tag;
+		gameMain->setLandLord();
+	}
+	else if(tag == 4)
 	{
 		outs->removeAllObjects();
 		for(int i=0;i<pokers->count();i++)
@@ -90,6 +110,7 @@ void Player::clearCards()
 }
 void Player::setStatus(PlayerStatus st)
 {
+	status = st;
 	if(type == FRONT || type == DECK)
 		return;
 	switch (st)
@@ -135,7 +156,16 @@ void Player::updatePokerLoc()
 	if(count < 1)
 		return;
 	sortPokers();
-	int x = -((count-1)*PokerB+PokerW)/2,y = PokerH;
+	int x = -((count-1)*PokerB+PokerW)/2,y = PokerH/2+PokerB;
+	//CCLog("%d,%f,",getRotation()>0.1f,getRotation());
+	
+	if(getRotation()>270.1f)
+	{
+		x -= (winWidth-winHeight+PokerH)/2;
+	}else if(getRotation()>90.1f)
+	{
+		x += (winWidth-winHeight-PokerH)/2;
+	}
 	Poker* pk;
 	for(int i=0;i<count;i++)
 	{
@@ -144,8 +174,12 @@ void Player::updatePokerLoc()
 		switch (type)
 		{
 		case DECK:
-			pk->setPosition(ccp(0,0));
-			//pk->setBack();
+			//pk->setPosition(ccp(0,0));
+			if(status == DEALCARD)
+				pk->setPosition(ccp(0,0));
+			else
+				pk->setPosition(ccp(x+i*PokerW,y));
+			////pk->setBack();
 			break;
 		case PLAYER:
 			//pk->setCanTouch(true);

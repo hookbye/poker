@@ -10,7 +10,7 @@ public:
 	~Poker();
 	virtual bool initWithNumColor(PokerColor color,PokerNum num);
 	static Poker* create(PokerColor color,PokerNum num);
-	Poker* copy();
+	Poker* copyPoker();
 	void setFront();
 	void setBack();
 	void setSelect();

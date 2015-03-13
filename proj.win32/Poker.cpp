@@ -31,7 +31,7 @@ Poker* Poker::create(PokerColor color,PokerNum num)
 	CC_SAFE_DELETE(pk);
 	return NULL;
 }
-Poker* Poker::copy()
+Poker* Poker::copyPoker()
 {
 	Poker* pk = Poker::create(getColor(),getNum());
 	return pk;
@@ -47,7 +47,7 @@ void Poker::setBack()
 {
 	if(m_isFront)
 	{
-		setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName("poker_6_1.png"));
+		setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName("poker_6_0.png"));
 	}
 }
 void Poker::setPokerPriority(int num)

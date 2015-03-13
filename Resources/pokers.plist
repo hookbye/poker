@@ -680,7 +680,7 @@
                 <key>sourceSize</key>
                 <string>{71,96}</string>
             </dict>
-            <key>poker_5_1.png</key>
+            <key>poker_5_14.png</key>
             <dict>
                 <key>frame</key>
                 <string>{{198,2},{71,96}}</string>
@@ -693,7 +693,7 @@
                 <key>sourceSize</key>
                 <string>{71,96}</string>
             </dict>
-            <key>poker_5_2.png</key>
+            <key>poker_5_15.png</key>
             <dict>
                 <key>frame</key>
                 <string>{{100,2},{71,96}}</string>
@@ -706,7 +706,7 @@
                 <key>sourceSize</key>
                 <string>{71,96}</string>
             </dict>
-            <key>poker_6_1.png</key>
+            <key>poker_6_0.png</key>
             <dict>
                 <key>frame</key>
                 <string>{{2,2},{71,96}}</string>
@@ -729,7 +729,7 @@
             <key>size</key>
             <string>{512,1024}</string>
             <key>smartupdate</key>
-            <string>$TexturePacker:SmartUpdate:982682238e1b386e65a8c8b471471ed8$</string>
+            <string>$TexturePacker:SmartUpdate:b8cdbe5790f0c594c89193676a50107e$</string>
             <key>textureFileName</key>
             <string>pokers.png</string>
         </dict>

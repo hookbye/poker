@@ -19,11 +19,14 @@ public:
 	CC_SYNTHESIZE(CCArray*,outs,Outs);
 	CC_SYNTHESIZE(Player*,front,Front);
 	CC_SYNTHESIZE(PlayerType,type,Type);
+	CC_SYNTHESIZE(GameScene*,gameMain,GameMain);
+	CC_SYNTHESIZE(bool,isLord,IsLord);
+	CC_SYNTHESIZE(int,callScore,CallScore);
 	void setStatus(PlayerStatus st);
 	void clearCards();
 	PlayerStatus getStatus(){return status;}
 private:
-	GameScene* gameScene;
+	 ;
 	PlayerStatus status;
 	CCMenu* turnMenu;
 	CCMenu* callMenu;

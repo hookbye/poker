@@ -1,8 +1,12 @@
 ﻿#pragma once
+#include "cocos2d.h"
 #define TURNTIME 2
 const int PokerW = 71;
 const int PokerH = 96;
 const int PokerB = 20;
+const cocos2d::CCSize winSize = cocos2d::CCDirector::sharedDirector()->getWinSize();
+const int winWidth = 800;//winSize.width;
+const int winHeight = 600;//winSize.height;
 enum PokerColor{
 	SPADE = 1,
 	HEART,
@@ -24,6 +28,8 @@ enum PokerNum{
 	K,
 	A,
 	TWO,
+	XIAOGUI,
+	DAGUI,
 };
 enum PokerClass{
 	DANZHANG,
@@ -48,6 +54,7 @@ enum PlayerStatus{
 	DEALCARD,
 	CALL,
 	OUTCARD,
+	DISPLAY,
 };
 
 
