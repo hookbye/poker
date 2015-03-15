@@ -3,6 +3,7 @@
 #include "Player.h"
 #include "Poker.h"
 USING_NS_CC;
+
 class GameScene :
 	public CCLayer
 {
@@ -23,18 +24,21 @@ public:
 	void setLandLord();
 
 	void movePokerTo(Player* src,Player* dest,int index = -1);
+	void sortPokers(CCArray* pks);
 
-	//获得牌型                        src         类型     最小值   最小值
 	CCArray* getPokersByCly(CCArray* pks,PokerClass cly,int num=1,int low=0,bool caipai = true);
-	CCArray* getDanZhangs(CCArray* pks);
-	CCArray* getDuiZis(CCArray* pks);
-	CCArray* getSanTiaos(CCArray* pks);
-	 
+	CCArray* getDanZhangs(CCArray* pks,int low = 0);
+	CCArray* getDuiZis(CCArray* pks,int num = DUIZI,int low = 0);
+	CCArray* getPokersFromArray(CCArray* pks,int num = 1,bool fromTop=true);
+	OutData analyPokers(CCArray* pks);
+	PokerClass analyPaixing(CCArray* pks,bool re = false); 
+	bool isYiLian(CCArray* pks,int num=0);
 	virtual bool ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchMoved(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent);
 	void update(float dt);
-    CREATE_FUNC(GameScene);
+	CC_SYNTHESIZE(OutData,roundData,RoundData);
+	CREATE_FUNC(GameScene);
 private:
 	Player* player;
 	Player* npcOne;
@@ -52,7 +56,9 @@ private:
 	bool isDealing;
 	bool isCalling;
 	int callCount;
-	int round;
+	int roundCount;
+
+	OutData outData;
 	
 	CCLabelTTF* timer;
 };

@@ -24,7 +24,12 @@ public:
 	CC_SYNTHESIZE(int,callScore,CallScore);
 	void setStatus(PlayerStatus st);
 	void clearCards();
+	void resetPokers();
+	void getOuts();
+	void outPokers();
 	PlayerStatus getStatus(){return status;}
+	void genPai(OutData round);
+	CCArray* randomOut(PokerClass &cly);
 private:
 	 ;
 	PlayerStatus status;

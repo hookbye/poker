@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "cocos2d.h"
-#define TURNTIME 2
+#define TURNTIME 4
 const int PokerW = 71;
 const int PokerH = 96;
 const int PokerB = 20;
@@ -36,12 +36,15 @@ enum PokerClass{
 	DUIZI,
 	SANTIAO,
 	SANDAIYI,
-	SANDAIER,
 	LIANDUI,
+	SANDAIER,
+	SIDAIYI,
 	FEIJI,
+	SIDAIER,
 	SHUNZI,
 	ZHADAN,
 	SHUANGWANG,
+	NOTHING,
 };
 enum PlayerType{
 	PLAYER,
@@ -57,5 +60,11 @@ enum PlayerStatus{
 	DISPLAY,
 };
 
+struct OutData{
+	//cocos2d::CCArray* pokers;
+	PokerClass paixing;
+	int num;
+	int low;
+};
 
 

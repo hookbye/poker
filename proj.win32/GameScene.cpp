@@ -2,12 +2,16 @@
 #include "Tool.h"
 USING_NS_CC;
 GameScene::GameScene():turnCount(0),turnTime(0),callCount(0),paixing((PokerClass)0),
-	isDealing(true),isCalling(false),round(0)
+	isDealing(true),isCalling(false),roundCount(0)
 {
 	pokers = CCArray::create();
 	pokers->retain();
 	players = CCArray::create();
 	players->retain();
+
+	roundData.paixing = NOTHING;
+	roundData.num = 0;
+	roundData.low = 0;
 
 }
 GameScene::~GameScene()
@@ -60,15 +64,14 @@ bool GameScene::init()
 	timer->setPosition(ccp(visibleSize.width/2,visibleSize.height - PokerB));
 	addChild(timer,1);
     CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("pokers.plist","pokers.png");
-	//£é£î£é£ô£è£å£ò£å
-	
+
 	initPlayers();
 	initPokers();
 	checkPokers();
 
 	this->setTouchEnabled(true);
 	this->setTouchMode(kCCTouchesOneByOne);
-	this->scheduleUpdate();
+	//this->scheduleUpdate();
     return true;
 }
 bool GameScene::initPlayers()
@@ -181,6 +184,27 @@ void GameScene::checkPokers()
 	}
 	deck->updatePokerLoc();
 }
+void GameScene::sortPokers(CCArray* pks)
+{
+	int count = pks->count();
+	if(count < 2)
+		return;
+
+	Poker* pk1;
+	Poker* pk2;
+	for(int i=0;i<count-1;i++)
+	{
+		for(int j=0;j<count-i-1;j++)
+		{
+			pk1 = (Poker*)pks->objectAtIndex(j);
+			pk2 = (Poker*)pks->objectAtIndex(j+1);
+			if((pk1->getNum() < pk2->getNum()) || (pk1->getNum() == pk2->getNum() && pk1->getColor()<pk2->getColor()))
+			{
+				pks->exchangeObject(pk1,pk2);
+			}
+		}
+	}
+}
 void GameScene::movePokerTo(Player* src,Player* dest,int index)
 {
 	int srcCount  = src->getPokers()->count();
@@ -212,6 +236,13 @@ void GameScene::dealPokers()
 		isCalling = true;
 		deck->setStatus(DISPLAY);
 		deck->updatePokerLoc();
+		//debug not update
+		if (player->getStatus() == DEALCARD)
+		{
+			turnCount = player->getTag();
+			player->setStatus(CALL);
+		}
+		
 		return;
 	}
 	isDealing = true;
@@ -234,7 +265,7 @@ void GameScene::setLandLord()
 	for(int i=0;i<3;i++)
 	{
 		temp = (Player*)players->objectAtIndex(i);
-		temp->setStatus(DEALCARD);
+		temp->setStatus(DISPLAY);
 		score = temp->getCallScore();
 		if(score > 0)
 		{
@@ -247,9 +278,9 @@ void GameScene::setLandLord()
 	{
 		lord = player;
 	}
-	lord->setIsLord(true)
-		;
-	turnCount = lord->getTag()+2;
+	lord->setIsLord(true);
+	lord->setStatus(OUTCARD);
+	turnCount = lord->getTag();
 	turnTime = TURNTIME;
 	callCount = 4;
 	CCArray* arr = CCArray::create();
@@ -273,8 +304,9 @@ void GameScene::pass()
 	for(int i=0;i<3;i++)
 	{
 		temp = (Player*)players->objectAtIndex(i);
-		temp->setStatus(DEALCARD);
+		temp->setStatus(DISPLAY);
 	}
+	
 	temp = ((Player*)players->objectAtIndex(++turnCount%3));
 	if(isCalling && callCount < 3)
 	{
@@ -292,9 +324,19 @@ void GameScene::pass()
 		isCalling = false;
 		temp->setStatus(OUTCARD);
 	}
+	if (!isCalling)
+	{
+		roundCount = ++roundCount%3;
+		if(roundCount == 0)
+		{
+			roundData.paixing = NOTHING;
+		}
+		CCLog("round Count %d",roundCount);
+	}
 }
 void GameScene::update(float dt)
 {
+	
 	if(isDealing)
 		return;
 	turnTime += dt;
@@ -310,12 +352,16 @@ void GameScene::update(float dt)
 	}
 }
 
-CCArray* GameScene::getDanZhangs(CCArray* pks)
+CCArray* GameScene::getDanZhangs(CCArray* pks,int low)
 {
+	int count = pks->count();
+	if (!pks || count<1)
+	{
+		return NULL;
+	}
 	CCArray* result = CCArray::create();
 	Poker* pk;
 	Poker* pk1;
-	int count = pks->count();
 	for(int i=0;i<count-1;i++)
 	{
 		pk = (Poker*)pks->objectAtIndex(i);
@@ -324,7 +370,7 @@ CCArray* GameScene::getDanZhangs(CCArray* pks)
 	for(int i=0;i<count-1;i++)
 	{
 		pk = (Poker*)pks->objectAtIndex(i);
-		for(int j=i+1;j<count-1;j++)
+		for(int j=i+1;j<count;j++)
 		{
 			pk1 = (Poker*)pks->objectAtIndex(j);
 			if(pk1->getNum() == pk->getNum())
@@ -333,60 +379,102 @@ CCArray* GameScene::getDanZhangs(CCArray* pks)
 				result->removeObject(pk1);
 			}
 		}
+		if (pk->getNum()<=low)
+		{
+			result->removeObject(pk);
+		}
 	}
+	//sortPokers(result);
 	return result;
 }
-CCArray* GameScene::getDuiZis(CCArray* pks)
+CCArray* GameScene::getDuiZis(CCArray* pks,int num,int low)
 {
+	int count = pks->count();
+	if (!pks || count<1)
+	{
+		return NULL;
+	}
 	CCArray* result = CCArray::create();
 	Poker* pk;
 	Poker* pk1;
-	int count = pks->count();
-	for(int i=0;i<count-2;i++)
+	
+	for(int i=0;i<count-num;i++)
 	{
 		pk = (Poker*)pks->objectAtIndex(i);
-		pk1 = (Poker*)pks->objectAtIndex(i+1);
-		if(pk->getNum() == pk1->getNum())
+		pk1 = (Poker*)pks->objectAtIndex(i+num);
+		if(pk->getNum() == pk1->getNum() && pk->getNum()>low)
 		{
-			result->addObject(pk);
-			result->addObject(pk1);
-			i++;
+			for(int j=i;j<=i+num;j++)
+			{
+				pk = (Poker*)pks->objectAtIndex(j);
+				result->addObject(pk);
+			}
+			i+= num;
 		}
 	}
 	return result;
 }
-CCArray* GameScene::getSanTiaos(CCArray* pks)
+CCArray* GameScene::getPokersFromArray(CCArray* pks,int num,bool fromTop)
 {
+	
+	int count = pks->count();
+	if (!pks || count<1)
+	{
+		return NULL;
+	}
 	CCArray* result = CCArray::create();
 	Poker* pk;
-	Poker* pk1;
-	int count = pks->count();
-	for(int i=0;i<count-3;i++)
+	
+	if (fromTop)
 	{
-		pk = (Poker*)pks->objectAtIndex(i);
-		pk1 = (Poker*)pks->objectAtIndex(i+2);
-		if(pk->getNum() == pk1->getNum())
+		for (int i = count-1;i>=count - num;i--)
 		{
+			pk = (Poker*)pks->objectAtIndex(i);
 			result->addObject(pk);
-			result->addObject((Poker*)pks->objectAtIndex(i+1));
-			result->addObject(pk1);
-			
-			i+=2 ;
+		}
+	}else
+	{
+		
+		for (int i = 0;i<num;i++)
+		{
+			pk = (Poker*)pks->objectAtIndex(i);
+			result->addObject(pk);
 		}
 	}
+	
 	return result;
 }
 CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,bool caipai)
 {
+	int count = pks->count();
+	if (!pks || count<1)
+	{
+		return NULL;
+	}
 	CCArray* result = CCArray::create();
+	CCArray* temp;
 	switch (cly)
 	{
 	case DANZHANG:
-		
+		temp = getPokersFromArray(getDanZhangs(pks,low),1);
+		if (temp)
+		{
+			result->addObjectsFromArray(temp);
+		}
 		break;
 	case DUIZI:
+		temp = getPokersFromArray(getDuiZis(pks,1,low),2);
+		if (temp)
+		{
+			result->addObjectsFromArray(temp);
+		}
 		break;
 	case SANTIAO:
+		temp = getPokersFromArray(getDuiZis(pks,2,low),3);
+		if (temp)
+		{
+			result->addObjectsFromArray(temp);
+		}
 		break;
 	case SANDAIYI:
 		break;
@@ -406,6 +494,162 @@ CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,b
 		break;
 	}
 	return result;
+}
+OutData GameScene::analyPokers(CCArray* pks)
+{
+	OutData data;
+	int count = pks->count();
+	data.num = count;
+	data.low = ((Poker*)pks->objectAtIndex(count-1))->getNum();
+	//data.pokers = pks;
+	data.paixing = analyPaixing(pks);
+
+	return data;
+}
+PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
+{
+	PokerClass px = NOTHING;
+	int count = pks->count();
+	Poker* pk;
+	Poker* pk1;
+	if (count == 1)
+	{
+		return DANZHANG;
+	}else if (count == 2)
+	{
+		pk = (Poker*)pks->objectAtIndex(0);
+		pk1 = (Poker*)pks->objectAtIndex(1);
+		if (pk->getNum() == pk1->getNum())
+		{
+			return DUIZI;
+		}
+	}else if (count == 3)
+	{
+		pk = (Poker*)pks->objectAtIndex(0);
+		pk1 = (Poker*)pks->objectAtIndex(2);
+		if (pk->getNum() == pk1->getNum())
+		{
+			return SANTIAO;
+		}
+	}else if (count == 4)
+	{
+		pk = (Poker*)pks->objectAtIndex(0);
+		pk1 = (Poker*)pks->objectAtIndex(3);
+		if (pk->getNum() == pk1->getNum())
+		{
+			return ZHADAN;
+		}else
+		{
+			pk1 = (Poker*)pks->objectAtIndex(2);
+			if (pk->getNum() == pk1->getNum())
+			{
+				return SANDAIYI;
+			}
+		}
+		pk1 = (Poker*)pks->objectAtIndex(2);
+		if (pk->getNum() == pk1->getNum())
+		{
+			return SANDAIYI;
+		}
+		pk1 = (Poker*)pks->objectAtIndex(1);
+		if (pk->getNum() == pk1->getNum())
+		{
+			pk = (Poker*)pks->objectAtIndex(1); 
+			pk1 = (Poker*)pks->objectAtIndex(2);
+			if (pk->getNum() == pk1->getNum())
+			{
+				return LIANDUI;
+			}
+		}
+	}
+	else if (count == 5)
+	{
+		pk = (Poker*)pks->objectAtIndex(0);
+		pk1 = (Poker*)pks->objectAtIndex(3);
+		if (pk->getNum() == pk1->getNum())
+		{
+			return SIDAIYI;
+		}
+
+		pk = (Poker*)pks->objectAtIndex(0);
+		pk1 = (Poker*)pks->objectAtIndex(3);
+		if (pk->getNum() == pk1->getNum())
+		{
+			return SANDAIER;
+		}
+		bool shunZi = true;
+		for (int i=0;i<count-1;i++)
+		{
+			pk = (Poker*)pks->objectAtIndex(i);
+			pk1 = (Poker*)pks->objectAtIndex(i+1);
+			if (pk->getNum()-1 != pk1->getNum())
+			{
+				shunZi = false;
+			}
+		}
+		if (shunZi)
+		{
+			return SHUNZI;
+		}
+	}
+	else
+	{
+		if (count == 6)
+		{
+			pk = (Poker*)pks->objectAtIndex(0);
+			pk1 = (Poker*)pks->objectAtIndex(3);
+			if (pk->getNum() == pk1->getNum())
+			{
+				return SIDAIER;
+			}
+		}
+		
+		if (isYiLian(pks,1))
+		{
+			return SHUNZI;
+		}
+		if (isYiLian(pks,2))
+		{
+			return LIANDUI;
+		}
+		if (isYiLian(pks,3))
+		{
+			return FEIJI;
+		}
+
+	}
+	if (!re)
+	{
+		CCArray* reverseArray = CCArray::create();
+		for (int i=count - 1;i>=0;i--)
+		{
+			pk = (Poker*)pks->objectAtIndex(i);
+			reverseArray->addObject(pk);
+		}
+		analyPaixing(reverseArray,true);
+	}
+	
+	return NOTHING;
+}
+bool GameScene::isYiLian(CCArray* pks,int num)
+{
+	int count = pks->count();
+	if((count < num) || (num>1 && (count < 4 || count/num < 2)) || (num == 1 && count< 5))
+		return false;
+	bool isYilian = true;
+	Poker* pk;
+	Poker* pk1;
+
+	for (int i=0;i<count-num;i+=num)
+	{
+		pk = (Poker*)pks->objectAtIndex(i);
+		pk1 = (Poker*)pks->objectAtIndex(i+num);
+		if (pk->getNum() == pk1->getNum()+1)
+		{
+			isYilian =  false;
+		}
+	}
+	return isYilian;
 }
 bool GameScene::ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent)
 {

@@ -52,19 +52,29 @@ bool Player::init()
 	}while(0);
 	return false;
 }
+
 void Player::menuCallback(CCObject* pSender)
 {
 	int tag = ((CCMenuItem*)pSender)->getTag();
 	Poker* pk;
 	if(tag == 5 || tag == 0)
 	{
-		CCArray* ar = gameMain->getDuiZis(pokers);
+		/*front->clearCards();
+		CCArray* ar = gameMain->getPokersFromArray(gameMain->getDanZhangs(pokers,FOUR),3);
 		CCObject* obj;
-		CCARRAY_FOREACH(ar,obj)
+		Poker* pk;
+		if (ar&&ar->count()>0)
 		{
-			CCLog("sigles ::   %d",((Poker*)obj)->getNum());
+		for (int i=0;i<ar->count();i++)
+		{
+		pk = (Poker*)ar->objectAtIndex(i);
+		pk->setSelect();
+		CCLog("sigles ::   %d,%d",pk->getNum(),pk->getIsSelect());
+
 		}
 		CCLog("===============================================");
+		}*/
+		
 		gameMain->pass();
 	}
 	else if(tag < 3)
@@ -79,25 +89,115 @@ void Player::menuCallback(CCObject* pSender)
 	}
 	else if(tag == 4)
 	{
-		outs->removeAllObjects();
-		for(int i=0;i<pokers->count();i++)
+		getOuts();
+		PokerClass pc = gameMain->analyPaixing(outs);
+		if (pc == NOTHING)
 		{
-			pk = (Poker*)pokers->objectAtIndex(i);
-			if(pk->getIsSelect())
-				outs->addObject(pk);
+			int count = outs->count();
+			for (int i=0;i<count;i++)
+			{
+				((Poker*)outs->objectAtIndex(i))->setSelect();
+			}
+			outs->removeAllObjects();
+		}else
+		{
+			OutData round = gameMain->analyPokers(outs);
+			OutData ground = gameMain->getRoundData();
+			if (ground.paixing == NOTHING)
+			{
+				gameMain->setRoundData(round);
+				outPokers();
+				gameMain->pass();
+			}else
+			{
+				//OutData* ground = gameMain->getRoundData();
+				if (round.paixing == ground.paixing && round.num == ground.num && round.low > ground.low)
+				{
+					gameMain->setRoundData(round);
+					outPokers();
+					gameMain->pass();
+				}else
+				{
+					int count = outs->count();
+					for (int i=0;i<count;i++)
+					{
+						((Poker*)outs->objectAtIndex(i))->setSelect();
+					}
+					outs->removeAllObjects();
+				}
+			}
+			
+			
 		}
+		
+	}
+}
+void Player::getOuts()
+{
+	Poker* pk;
+	outs->removeAllObjects();
+	for(int i=0;i<pokers->count();i++)
+	{
+		pk = (Poker*)pokers->objectAtIndex(i);
+		if(pk->getIsSelect())
+			outs->addObject(pk);
+	}
+}
+void Player::outPokers()
+{
+	Poker* pk;
+	for(int i=0;i<outs->count();i++)
+	{
+		pk = (Poker*)outs->objectAtIndex(i);
+		pk->setCanTouch(false);
+		pokers->removeObject(pk);
+	}
+	front->clearCards();
+	//front->getPokers()->removeAllObjects();
+	front->getPokers()->addObjectsFromArray(outs);
+	front->updatePokerLoc();
+	updatePokerLoc();
+}
+void Player::genPai(OutData round)
+{
+	if (round.paixing == NOTHING)
+	{
+		return;
+	}
+	outs->removeAllObjects();
+	CCArray* arr = gameMain->getPokersByCly(pokers,round.paixing,round.num,round.low);
+	if (arr)
+	{
+		outs->addObjectsFromArray(arr);
 		for(int i=0;i<outs->count();i++)
 		{
-			pk = (Poker*)outs->objectAtIndex(i);
-			pk->setCanTouch(false);
-			pokers->removeObject(pk);
+			((Poker*)outs->objectAtIndex(i))->setSelect();
 		}
-		front->clearCards();
-		front->getPokers()->removeAllObjects();
-		front->getPokers()->addObjectsFromArray(outs);
-		front->updatePokerLoc();
-		updatePokerLoc();
 	}
+	
+}
+
+CCArray* Player::randomOut(PokerClass &cly)
+{
+	return NULL;
+}
+void Player::resetPokers()
+{
+	int count = pokers->count();
+	Poker* pk;
+	for(int i=0;i<count;i++)
+	{
+		pk = (Poker*)pokers->objectAtIndex(i);
+		
+		pk->setIsSelect(false);
+	}
+	count = outs->count();
+	for(int i=0;i<count;i++)
+	{
+		pk = (Poker*)outs->objectAtIndex(i);
+		pk->setIsSelect(false);
+	}
+	updatePokerLoc();
 }
 void Player::clearCards()
 {
@@ -107,15 +207,19 @@ void Player::clearCards()
 		pk = (Poker*)pokers->objectAtIndex(i);
 		pk->removeFromParent();	
 	}
+	pokers->removeAllObjects();
 }
 void Player::setStatus(PlayerStatus st)
 {
 	status = st;
+	
 	if(type == FRONT || type == DECK)
 		return;
+	resetPokers();
 	switch (st)
 	{
 	case DEALCARD:
+	case DISPLAY:
 		turnMenu->setVisible(false);
 		callMenu->setVisible(false);
 		break;
@@ -123,6 +227,8 @@ void Player::setStatus(PlayerStatus st)
 		callMenu->setVisible(true);
 		break;
 	case OUTCARD:
+		front->clearCards();
+		genPai(gameMain->getRoundData());
 		turnMenu->setVisible(true);
 		break;
 	default:
