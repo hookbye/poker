@@ -49,6 +49,7 @@ enum PokerClass{
 enum PlayerType{
 	PLAYER,
 	NPC,
+	NPC1,
 	FRONT,
 	DECK,
 };

@@ -27,9 +27,10 @@ public:
 	void resetPokers();
 	void getOuts();
 	void outPokers();
+	bool canBeOut(OutData round);
 	PlayerStatus getStatus(){return status;}
 	void genPai(OutData round);
-	CCArray* randomOut(PokerClass &cly);
+	CCArray* randomOut();
 private:
 	 ;
 	PlayerStatus status;

@@ -99,7 +99,7 @@ bool GameScene::initPlayers()
 
 	npcTwo = Player::create();
 	npcTwo->retain();
-	npcTwo->setType(NPC);
+	npcTwo->setType(NPC1);
 	npcTwo->setGameMain(this);
 	npcTwo->setPosition(ccp(size.width,size.height/2));
 	npcTwo->setRotation(270);
@@ -279,7 +279,7 @@ void GameScene::setLandLord()
 		lord = player;
 	}
 	lord->setIsLord(true);
-	lord->setStatus(OUTCARD);
+	
 	turnCount = lord->getTag();
 	turnTime = TURNTIME;
 	callCount = 4;
@@ -294,6 +294,8 @@ void GameScene::setLandLord()
 		movePokerTo(deck,lord);
 	deck->getPokers()->addObjectsFromArray(arr);
 	deck->updatePokerLoc();
+
+	lord->setStatus(OUTCARD);//´¦ÀíÍêÖ®ºóÉèÖÃ×´Ì¬£¬·ÀÖ¹×´Ì¬»ìÂÒ
 }
 void GameScene::pass()
 {
@@ -324,14 +326,24 @@ void GameScene::pass()
 		isCalling = false;
 		temp->setStatus(OUTCARD);
 	}
-	if (!isCalling)
+}
+void GameScene::setNotOut(PlayerType tp,bool notOut)
+{
+	if(!isCalling)
 	{
-		roundCount = ++roundCount%3;
-		if(roundCount == 0)
+		if(!notOut)
+		{
+			roundCount = 0;
+			CCLog(" player :%d  follow",tp);
+			return;
+		}
+		roundCount++;
+		CCLog(" player :%d not follow £¡£¡ round count %d ,reset %d",tp,roundCount,roundCount%2 == 0);
+		if(roundCount%2 == 0)
 		{
 			roundData.paixing = NOTHING;
+			roundCount = 0;
 		}
-		CCLog("round Count %d",roundCount);
 	}
 }
 void GameScene::update(float dt)
@@ -591,6 +603,10 @@ PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
 		{
 			return SHUNZI;
 		}
+		if (isYiLian(pks,1))
+		{
+			return SHUNZI;
+		}
 	}
 	else
 	{
@@ -631,20 +647,27 @@ PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
 	
 	return NOTHING;
 }
-bool GameScene::isYiLian(CCArray* pks,int num)
+bool GameScene::isYiLian(CCArray* pks,int strip)
 {
 	int count = pks->count();
-	if((count < num) || (num>1 && (count < 4 || count/num < 2)) || (num == 1 && count< 5))
+	if((count < strip) || (strip>1 && (count < 4 || count/strip < 2)) || (strip == 1 && count< 5))
 		return false;
 	bool isYilian = true;
 	Poker* pk;
 	Poker* pk1;
 
-	for (int i=0;i<count-num;i+=num)
+	for (int i=0;i<count-strip;i+=strip)
 	{
 		pk = (Poker*)pks->objectAtIndex(i);
-		pk1 = (Poker*)pks->objectAtIndex(i+num);
-		if (pk->getNum() == pk1->getNum()+1)
+		
+		for(int j=i+1;j<i+strip;j++)
+		{
+			pk1 = (Poker*)pks->objectAtIndex(j);
+			if (pk->getNum() != pk1->getNum())
+				isYilian =  false;
+		}
+		pk1 = (Poker*)pks->objectAtIndex(i+strip);
+		if (pk->getNum()+1 != pk1->getNum())
 		{
 			isYilian =  false;
 		}

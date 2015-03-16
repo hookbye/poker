@@ -32,7 +32,10 @@ public:
 	CCArray* getPokersFromArray(CCArray* pks,int num = 1,bool fromTop=true);
 	OutData analyPokers(CCArray* pks);
 	PokerClass analyPaixing(CCArray* pks,bool re = false); 
-	bool isYiLian(CCArray* pks,int num=0);
+	bool isYiLian(CCArray* pks,int strip=1);
+
+	void setNotOut(PlayerType tp,bool notOut = true);
+
 	virtual bool ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchMoved(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent);
@@ -57,7 +60,6 @@ private:
 	bool isCalling;
 	int callCount;
 	int roundCount;
-
 	OutData outData;
 	
 	CCLabelTTF* timer;

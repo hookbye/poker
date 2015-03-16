@@ -2,7 +2,7 @@
 #include "Poker.h"
 #include "GameScene.h"
 #include "Tool.h"
-Player::Player(void):gameMain(NULL),front(NULL),status(DEALCARD),isLord(false)
+Player::Player(void):gameMain(NULL),front(NULL),type(PLAYER),status(DEALCARD),isLord(false),callScore(0)
 {
 	pokers = CCArray::create();
 	pokers->retain();
@@ -59,22 +59,8 @@ void Player::menuCallback(CCObject* pSender)
 	Poker* pk;
 	if(tag == 5 || tag == 0)
 	{
-		/*front->clearCards();
-		CCArray* ar = gameMain->getPokersFromArray(gameMain->getDanZhangs(pokers,FOUR),3);
-		CCObject* obj;
-		Poker* pk;
-		if (ar&&ar->count()>0)
-		{
-		for (int i=0;i<ar->count();i++)
-		{
-		pk = (Poker*)ar->objectAtIndex(i);
-		pk->setSelect();
-		CCLog("sigles ::   %d,%d",pk->getNum(),pk->getIsSelect());
-
-		}
-		CCLog("===============================================");
-		}*/
-		
+		if(tag == 5)
+			gameMain->setNotOut(type);
 		gameMain->pass();
 	}
 	else if(tag < 3)
@@ -89,54 +75,25 @@ void Player::menuCallback(CCObject* pSender)
 	}
 	else if(tag == 4)
 	{
-		getOuts();
-		PokerClass pc = gameMain->analyPaixing(outs);
-		if (pc == NOTHING)
-		{
-			int count = outs->count();
-			for (int i=0;i<count;i++)
-			{
-				((Poker*)outs->objectAtIndex(i))->setSelect();
-			}
-			outs->removeAllObjects();
-		}else
-		{
-			OutData round = gameMain->analyPokers(outs);
-			OutData ground = gameMain->getRoundData();
-			if (ground.paixing == NOTHING)
-			{
-				gameMain->setRoundData(round);
-				outPokers();
-				gameMain->pass();
-			}else
-			{
-				//OutData* ground = gameMain->getRoundData();
-				if (round.paixing == ground.paixing && round.num == ground.num && round.low > ground.low)
-				{
-					gameMain->setRoundData(round);
-					outPokers();
-					gameMain->pass();
-				}else
-				{
-					int count = outs->count();
-					for (int i=0;i<count;i++)
-					{
-						((Poker*)outs->objectAtIndex(i))->setSelect();
-					}
-					outs->removeAllObjects();
-				}
-			}
-			
-			
-		}
-		
+		outPokers();
 	}
+}
+bool Player::canBeOut(OutData round)
+{
+	//getOuts();
+	PokerClass pc = gameMain->analyPaixing(outs);
+	OutData ground = gameMain->getRoundData();
+	if ((pc != NOTHING) && (ground.paixing == NOTHING || (round.paixing == ground.paixing && round.num == ground.num && round.low > ground.low)))
+	{
+		return true;
+	}
+	return false;
 }
 void Player::getOuts()
 {
 	Poker* pk;
 	outs->removeAllObjects();
-	for(int i=0;i<pokers->count();i++)
+	for(int i=pokers->count()-1;i>=0;i--)
 	{
 		pk = (Poker*)pokers->objectAtIndex(i);
 		if(pk->getIsSelect())
@@ -145,41 +102,81 @@ void Player::getOuts()
 }
 void Player::outPokers()
 {
-	Poker* pk;
-	for(int i=0;i<outs->count();i++)
+	getOuts();
+	if(outs->count()<1)
+		return;
+	OutData round = gameMain->analyPokers(outs);
+	if(canBeOut(round))
 	{
-		pk = (Poker*)outs->objectAtIndex(i);
-		pk->setCanTouch(false);
-		pokers->removeObject(pk);
+		Poker* pk;
+		for(int i=0;i<outs->count();i++)
+		{
+			pk = (Poker*)outs->objectAtIndex(i);
+			pk->setCanTouch(false);
+			CCLog("%d outcard：%d _ %d",type,pk->getColor(),pk->getNum());
+			pokers->removeObject(pk);
+		}
+		//front->clearCards();
+		//front->getPokers()->removeAllObjects();
+		front->getPokers()->addObjectsFromArray(outs);
+		front->updatePokerLoc();
+		updatePokerLoc();   
+		gameMain->setRoundData(round);
+		gameMain->setNotOut(type,false);
+		gameMain->pass();
+	}else
+	{
+		outs->removeAllObjects();
+		resetPokers();
 	}
-	front->clearCards();
-	//front->getPokers()->removeAllObjects();
-	front->getPokers()->addObjectsFromArray(outs);
-	front->updatePokerLoc();
-	updatePokerLoc();
 }
 void Player::genPai(OutData round)
 {
 	if (round.paixing == NOTHING)
 	{
+		if(type != PLAYER)
+		{
+			outs->removeAllObjects();
+			outs->addObject(pokers->randomObject());//(randomOut());
+			for(int i=0;i<outs->count();i++)
+				((Poker*)outs->objectAtIndex(i))->setIsSelect(true);
+			outPokers();
+		}
 		return;
 	}
 	outs->removeAllObjects();
 	CCArray* arr = gameMain->getPokersByCly(pokers,round.paixing,round.num,round.low);
-	if (arr)
+	if (arr && arr->count()>0)
 	{
 		outs->addObjectsFromArray(arr);
 		for(int i=0;i<outs->count();i++)
 		{
 			((Poker*)outs->objectAtIndex(i))->setSelect();
 		}
+		if(type != PLAYER)
+			outPokers();
+		else
+		{
+			CCLog("stop here");
+		}
+	}else
+	{
+		if(type != PLAYER)
+		{
+			gameMain->setNotOut(type);
+			gameMain->pass();
+		}
 	}
-	
 }
 
-CCArray* Player::randomOut(PokerClass &cly)
+CCArray* Player::randomOut()
 {
-	return NULL;
+	CCArray* result = gameMain->getPokersFromArray(gameMain->getDanZhangs(pokers),1);
+	if(result == NULL)
+	{
+		result->addObject(pokers->randomObject());
+	}
+	return result;
 }
 void Player::resetPokers()
 {
@@ -188,7 +185,7 @@ void Player::resetPokers()
 	for(int i=0;i<count;i++)
 	{
 		pk = (Poker*)pokers->objectAtIndex(i);
-		
+		pk->setCanTouch(true);
 		pk->setIsSelect(false);
 	}
 	count = outs->count();
@@ -228,8 +225,9 @@ void Player::setStatus(PlayerStatus st)
 		break;
 	case OUTCARD:
 		front->clearCards();
-		genPai(gameMain->getRoundData());
 		turnMenu->setVisible(true);
+		//if(type != PLAYER)
+		genPai(gameMain->getRoundData());
 		break;
 	default:
 		break;
