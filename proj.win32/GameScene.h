@@ -41,6 +41,7 @@ public:
 	virtual void ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent);
 	void update(float dt);
 	CC_SYNTHESIZE(OutData,roundData,RoundData);
+	CC_SYNTHESIZE(PlayerType ,zhuang,Zhuang);
 	CREATE_FUNC(GameScene);
 private:
 	Player* player;

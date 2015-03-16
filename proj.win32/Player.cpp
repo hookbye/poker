@@ -47,6 +47,12 @@ bool Player::init()
 		addChild(turnMenu);
 		/*turnMenu->setVisible(false);*/
 		menuItems->release();
+
+		roundLabel = CCLabelTTF::create(a2u("不出").c_str(),"arial",40);
+		roundLabel->setPosition(ccp(0,PokerH*1.5));
+		roundLabel->retain();
+		roundLabel->setVisible(false);
+		addChild(roundLabel);
 		setStatus(status);
 		return true;
 	}while(0);
@@ -60,13 +66,16 @@ void Player::menuCallback(CCObject* pSender)
 	if(tag == 5 || tag == 0)
 	{
 		if(tag == 5)
+		{
 			gameMain->setNotOut(type);
-		gameMain->pass();
+			roundLabel->setVisible(true);
+		}
+		pass();
 	}
 	else if(tag < 3)
 	{
 		callScore = tag;
-		gameMain->pass();
+		pass();
 	}
 	else if(tag == 3)
 	{
@@ -123,7 +132,8 @@ void Player::outPokers()
 		updatePokerLoc();   
 		gameMain->setRoundData(round);
 		gameMain->setNotOut(type,false);
-		gameMain->pass();
+		roundLabel->setVisible(false);
+		pass();
 	}else
 	{
 		outs->removeAllObjects();
@@ -164,7 +174,8 @@ void Player::genPai(OutData round)
 		if(type != PLAYER)
 		{
 			gameMain->setNotOut(type);
-			gameMain->pass();
+			roundLabel->setVisible(true);
+			pass();
 		}
 	}
 }
@@ -196,6 +207,11 @@ void Player::resetPokers()
 	}
 	updatePokerLoc();
 }
+void Player::pass()
+{
+	gameMain->pass();
+	//roundLabel->setVisible(false);
+}
 void Player::clearCards()
 {
 	Poker* pk;
@@ -225,6 +241,7 @@ void Player::setStatus(PlayerStatus st)
 		break;
 	case OUTCARD:
 		front->clearCards();
+		roundLabel->setVisible(false);
 		turnMenu->setVisible(true);
 		//if(type != PLAYER)
 		genPai(gameMain->getRoundData());

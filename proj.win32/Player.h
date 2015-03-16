@@ -30,11 +30,13 @@ public:
 	bool canBeOut(OutData round);
 	PlayerStatus getStatus(){return status;}
 	void genPai(OutData round);
+	void pass();
 	CCArray* randomOut();
 private:
 	 ;
 	PlayerStatus status;
 	CCMenu* turnMenu;
 	CCMenu* callMenu;
+	CCLabelTTF* roundLabel;
 };
 

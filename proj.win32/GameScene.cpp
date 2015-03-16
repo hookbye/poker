@@ -71,7 +71,7 @@ bool GameScene::init()
 
 	this->setTouchEnabled(true);
 	this->setTouchMode(kCCTouchesOneByOne);
-	//this->scheduleUpdate();
+	this->scheduleUpdate();
     return true;
 }
 bool GameScene::initPlayers()
@@ -237,11 +237,11 @@ void GameScene::dealPokers()
 		deck->setStatus(DISPLAY);
 		deck->updatePokerLoc();
 		//debug not update
-		if (player->getStatus() == DEALCARD)
+		/*if (player->getStatus() == DEALCARD)
 		{
 			turnCount = player->getTag();
 			player->setStatus(CALL);
-		}
+		}*/
 		
 		return;
 	}
@@ -335,11 +335,12 @@ void GameScene::setNotOut(PlayerType tp,bool notOut)
 		{
 			roundCount = 0;
 			CCLog(" player :%d  follow",tp);
+			zhuang = tp;
 			return;
 		}
 		roundCount++;
-		CCLog(" player :%d not follow £¡£¡ round count %d ,reset %d",tp,roundCount,roundCount%2 == 0);
-		if(roundCount%2 == 0)
+		CCLog(" player :%d not follow !! round count %d ,reset %d",tp,roundCount,roundCount%2 == 0);
+		if(roundCount%2 == 0 || zhuang == tp)
 		{
 			roundData.paixing = NOTHING;
 			roundCount = 0;
@@ -357,10 +358,6 @@ void GameScene::update(float dt)
 	if(turnTime > TURNTIME)
 	{
 		pass();
-		if(!isCalling)
-		{
-
-		}
 	}
 }
 
@@ -489,6 +486,11 @@ CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,b
 		}
 		break;
 	case SANDAIYI:
+		temp = getPokersFromArray(getDuiZis(pks,2,low),3);
+		if (temp)
+		{
+			result->addObjectsFromArray(temp);
+		}
 		break;
 	case SANDAIER:
 		break;
