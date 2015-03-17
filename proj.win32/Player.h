@@ -25,12 +25,13 @@ public:
 	void setStatus(PlayerStatus st);
 	void clearCards();
 	void resetPokers();
-	void getOuts();
+	void getOutPokers();
 	void outPokers();
 	bool canBeOut(OutData round);
 	PlayerStatus getStatus(){return status;}
 	void genPai(OutData round);
 	void pass();
+	void buChu();
 	CCArray* randomOut();
 private:
 	 ;

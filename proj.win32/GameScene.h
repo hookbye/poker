@@ -27,8 +27,8 @@ public:
 	void sortPokers(CCArray* pks);
 
 	CCArray* getPokersByCly(CCArray* pks,PokerClass cly,int num=1,int low=0,bool caipai = true);
-	CCArray* getDanZhangs(CCArray* pks,int low = 0);
-	CCArray* getDuiZis(CCArray* pks,int num = DUIZI,int low = 0);
+	CCArray* getDanZhangs(CCArray* pks,int low = 0,bool caipai = false);
+	CCArray* getDuiZis(CCArray* pks,int strip = 1,int low = 0);
 	CCArray* getPokersFromArray(CCArray* pks,int num = 1,bool fromTop=true);
 	OutData analyPokers(CCArray* pks);
 	PokerClass analyPaixing(CCArray* pks,bool re = false); 

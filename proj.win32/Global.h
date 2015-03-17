@@ -57,6 +57,8 @@ enum PlayerType{
 enum PlayerStatus{
 	DEALCARD,
 	CALL,
+	TOBEOUT,
+	NOTOUT,
 	OUTCARD,
 	DISPLAY,
 };

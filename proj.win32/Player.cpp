@@ -65,11 +65,7 @@ void Player::menuCallback(CCObject* pSender)
 	Poker* pk;
 	if(tag == 5 || tag == 0)
 	{
-		if(tag == 5)
-		{
-			gameMain->setNotOut(type);
-			roundLabel->setVisible(true);
-		}
+		setStatus(DISPLAY);
 		pass();
 	}
 	else if(tag < 3)
@@ -89,7 +85,7 @@ void Player::menuCallback(CCObject* pSender)
 }
 bool Player::canBeOut(OutData round)
 {
-	//getOuts();
+	//getOutPokers();
 	PokerClass pc = gameMain->analyPaixing(outs);
 	OutData ground = gameMain->getRoundData();
 	if ((pc != NOTHING) && (ground.paixing == NOTHING || (round.paixing == ground.paixing && round.num == ground.num && round.low > ground.low)))
@@ -98,7 +94,7 @@ bool Player::canBeOut(OutData round)
 	}
 	return false;
 }
-void Player::getOuts()
+void Player::getOutPokers()
 {
 	Poker* pk;
 	outs->removeAllObjects();
@@ -111,7 +107,7 @@ void Player::getOuts()
 }
 void Player::outPokers()
 {
-	getOuts();
+	getOutPokers();
 	if(outs->count()<1)
 		return;
 	OutData round = gameMain->analyPokers(outs);
@@ -131,31 +127,41 @@ void Player::outPokers()
 		front->updatePokerLoc();
 		updatePokerLoc();   
 		gameMain->setRoundData(round);
-		gameMain->setNotOut(type,false);
-		roundLabel->setVisible(false);
+		setStatus(DISPLAY);
 		pass();
 	}else
 	{
 		outs->removeAllObjects();
 		resetPokers();
+		if(type != PLAYER)
+			CCLog("break auto");
 	}
 }
 void Player::genPai(OutData round)
 {
+	CCLog("gen pai isnothing?%d,paixing %d",round.paixing == NOTHING,round.paixing);
 	if (round.paixing == NOTHING)
 	{
-		if(type != PLAYER)
+		if(type != PLAYER )
 		{
-			outs->removeAllObjects();
-			outs->addObject(pokers->randomObject());//(randomOut());
-			for(int i=0;i<outs->count();i++)
-				((Poker*)outs->objectAtIndex(i))->setIsSelect(true);
-			outPokers();
+			if(pokers->count()>0)
+			{
+				outs->removeAllObjects();
+				outs->addObject(pokers->randomObject());//(randomOut());
+				for(int i=0;i<outs->count();i++)
+					((Poker*)outs->objectAtIndex(i))->setIsSelect(true);
+				outPokers();
+			}else
+			{
+				CCLog(" player :%d  pass ",type);
+				pass();
+			}
 		}
 		return;
 	}
 	outs->removeAllObjects();
 	CCArray* arr = gameMain->getPokersByCly(pokers,round.paixing,round.num,round.low);
+	CCLog("genpai canbe out :%d  ",arr && arr->count()>0);
 	if (arr && arr->count()>0)
 	{
 		outs->addObjectsFromArray(arr);
@@ -163,18 +169,18 @@ void Player::genPai(OutData round)
 		{
 			((Poker*)outs->objectAtIndex(i))->setSelect();
 		}
+		CCLog(" player :%d  out ",type);
 		if(type != PLAYER)
 			outPokers();
 		else
 		{
-			CCLog("stop here");
+			CCLog("player turn------");
 		}
 	}else
 	{
 		if(type != PLAYER)
 		{
-			gameMain->setNotOut(type);
-			roundLabel->setVisible(true);
+			CCLog(" player :%d  pass ",type);
 			pass();
 		}
 	}
@@ -210,7 +216,9 @@ void Player::resetPokers()
 void Player::pass()
 {
 	gameMain->pass();
-	//roundLabel->setVisible(false);
+}
+void Player::buChu()
+{
 }
 void Player::clearCards()
 {
@@ -235,16 +243,32 @@ void Player::setStatus(PlayerStatus st)
 	case DISPLAY:
 		turnMenu->setVisible(false);
 		callMenu->setVisible(false);
+		roundLabel->setVisible(false);
 		break;
 	case CALL:
+		turnMenu->setVisible(false);
+		roundLabel->setVisible(false);
 		callMenu->setVisible(true);
 		break;
-	case OUTCARD:
-		front->clearCards();
+	case TOBEOUT:
 		roundLabel->setVisible(false);
+		callMenu->setVisible(false);
+		front->clearCards();
 		turnMenu->setVisible(true);
 		//if(type != PLAYER)
 		genPai(gameMain->getRoundData());
+		break;
+	case NOTOUT:
+		turnMenu->setVisible(false);
+		callMenu->setVisible(false);
+		roundLabel->setVisible(true);
+		gameMain->setNotOut(type);
+		break;
+	case OUTCARD:
+		turnMenu->setVisible(false);
+		callMenu->setVisible(false);
+		roundLabel->setVisible(false);
+		gameMain->setNotOut(type,false);
 		break;
 	default:
 		break;
@@ -309,10 +333,11 @@ void Player::updatePokerLoc()
 		case FRONT:
 		default:
 			pk->setPosition(ccp(x+i*PokerB,y));
-			pk->setPokerPriority(i);
+			//pk->setPokerPriority(i);
 			break;
 		}
-		addChild(pk);
+		pk->setTag(i);
+		addChild(pk,i);
 	}
 	
 }

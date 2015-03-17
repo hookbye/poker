@@ -71,7 +71,7 @@ bool GameScene::init()
 
 	this->setTouchEnabled(true);
 	this->setTouchMode(kCCTouchesOneByOne);
-	this->scheduleUpdate();
+	//this->scheduleUpdate();
     return true;
 }
 bool GameScene::initPlayers()
@@ -219,9 +219,9 @@ void GameScene::movePokerTo(Player* src,Player* dest,int index)
 	src->getPokers()->removeObject(pk);
 	Player* temp = dest;
 	
-	pos = deck->convertToNodeSpaceAR(dest->getPosition());
+	pos = src->convertToNodeSpaceAR(dest->getPosition());
 	dest->getPokers()->addObject(pk);
-	deck->getPokers()->removeObject(pk);
+	src->getPokers()->removeObject(pk);
 	pk->setTag(dest->getTag());	
 	CCMoveTo* move = CCMoveTo::create(0.1f,pos);
 	CCCallFuncO* callback = CCCallFuncO::create(this,SEL_CallFuncO(&GameScene::dealPokerCallback),pk);
@@ -237,11 +237,12 @@ void GameScene::dealPokers()
 		deck->setStatus(DISPLAY);
 		deck->updatePokerLoc();
 		//debug not update
-		/*if (player->getStatus() == DEALCARD)
+		if (player->getStatus() == DEALCARD)
 		{
 			turnCount = player->getTag();
 			player->setStatus(CALL);
-		}*/
+			callCount++;
+		}
 		
 		return;
 	}
@@ -281,13 +282,14 @@ void GameScene::setLandLord()
 	lord->setIsLord(true);
 	
 	turnCount = lord->getTag();
-	turnTime = TURNTIME;
+	turnTime = 0;
 	callCount = 4;
 	CCArray* arr = CCArray::create();
 	Poker* pk;
 	for(int i=0;i<3;i++)
 	{
 		pk = (Poker*)deck->getPokers()->objectAtIndex(i);
+		pk->setCanTouch(true);
 		arr->addObject(pk->copyPoker());
 	}
 	for(int i=0;i<3;i++)
@@ -295,7 +297,7 @@ void GameScene::setLandLord()
 	deck->getPokers()->addObjectsFromArray(arr);
 	deck->updatePokerLoc();
 
-	lord->setStatus(OUTCARD);//处理完之后设置状态，防止状态混乱
+	lord->setStatus(TOBEOUT);//处理完之后设置状态，防止状态混乱
 }
 void GameScene::pass()
 {
@@ -303,18 +305,25 @@ void GameScene::pass()
 	int timerCount = TURNTIME - ceil(turnTime);
 	timer->setString(a2u(CCString::createWithFormat("%d",timerCount%TURNTIME+1)->getCString()).c_str());
 	Player* temp;
-	for(int i=0;i<3;i++)
-	{
-		temp = (Player*)players->objectAtIndex(i);
-		temp->setStatus(DISPLAY);
-	}
 	
-	temp = ((Player*)players->objectAtIndex(++turnCount%3));
+	temp = ((Player*)players->objectAtIndex(turnCount++%3));
+	if(!isCalling && turnCount > 0)
+	{
+		if(temp->getFront()->getPokers()->count() > 0 )
+		{
+			temp->setStatus(OUTCARD);
+		}else
+		{
+			if(temp->getType() == PLAYER)
+				CCLog("player pass");
+			temp->setStatus(NOTOUT);
+		}
+	}
+	temp = ((Player*)players->objectAtIndex(turnCount%3));
 	if(isCalling && callCount < 3)
 	{
 		temp->setStatus(CALL);
 		callCount++;
-		
 	}
 	else
 	{
@@ -324,7 +333,7 @@ void GameScene::pass()
 			callCount++;
 		}
 		isCalling = false;
-		temp->setStatus(OUTCARD);
+		temp->setStatus(TOBEOUT);
 	}
 }
 void GameScene::setNotOut(PlayerType tp,bool notOut)
@@ -334,13 +343,13 @@ void GameScene::setNotOut(PlayerType tp,bool notOut)
 		if(!notOut)
 		{
 			roundCount = 0;
-			CCLog(" player :%d  follow",tp);
+			//CCLog(" player :%d  follow",tp);
 			zhuang = tp;
 			return;
 		}
 		roundCount++;
 		CCLog(" player :%d not follow !! round count %d ,reset %d",tp,roundCount,roundCount%2 == 0);
-		if(roundCount%2 == 0 || zhuang == tp)
+		if(roundCount%2 == 0)
 		{
 			roundData.paixing = NOTHING;
 			roundCount = 0;
@@ -361,7 +370,7 @@ void GameScene::update(float dt)
 	}
 }
 
-CCArray* GameScene::getDanZhangs(CCArray* pks,int low)
+CCArray* GameScene::getDanZhangs(CCArray* pks,int low,bool caipai)
 {
 	int count = pks->count();
 	if (!pks || count<1)
@@ -371,6 +380,7 @@ CCArray* GameScene::getDanZhangs(CCArray* pks,int low)
 	CCArray* result = CCArray::create();
 	Poker* pk;
 	Poker* pk1;
+	//result->addObjectsFromArray(pks);
 	for(int i=0;i<count-1;i++)
 	{
 		pk = (Poker*)pks->objectAtIndex(i);
@@ -393,10 +403,21 @@ CCArray* GameScene::getDanZhangs(CCArray* pks,int low)
 			result->removeObject(pk);
 		}
 	}
+	if(result->count() < 1 && caipai)
+	{
+		for(int i=count-1;i>=0;i++)
+		{
+			pk = (Poker*)pks->objectAtIndex(i);
+			if(pk->getNum() > low)
+			{
+				result->addObject(pk);
+			}
+		}
+	}
 	//sortPokers(result);
 	return result;
 }
-CCArray* GameScene::getDuiZis(CCArray* pks,int num,int low)
+CCArray* GameScene::getDuiZis(CCArray* pks,int strip,int low)
 {
 	int count = pks->count();
 	if (!pks || count<1)
@@ -407,18 +428,18 @@ CCArray* GameScene::getDuiZis(CCArray* pks,int num,int low)
 	Poker* pk;
 	Poker* pk1;
 	
-	for(int i=0;i<count-num;i++)
+	for(int i=0;i<count-strip;i++)
 	{
 		pk = (Poker*)pks->objectAtIndex(i);
-		pk1 = (Poker*)pks->objectAtIndex(i+num);
+		pk1 = (Poker*)pks->objectAtIndex(i+strip);
 		if(pk->getNum() == pk1->getNum() && pk->getNum()>low)
 		{
-			for(int j=i;j<=i+num;j++)
+			for(int j=i;j<=i+strip;j++)
 			{
 				pk = (Poker*)pks->objectAtIndex(j);
 				result->addObject(pk);
 			}
-			i+= num;
+			i+= strip;
 		}
 	}
 	return result;
@@ -486,23 +507,78 @@ CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,b
 		}
 		break;
 	case SANDAIYI:
+	case SANDAIER:
 		temp = getPokersFromArray(getDuiZis(pks,2,low),3);
 		if (temp)
 		{
 			result->addObjectsFromArray(temp);
 		}
-		break;
-	case SANDAIER:
+		temp = getPokersFromArray(getDanZhangs(pks,0,caipai),num-3);
+		if (temp)
+		{
+			result->addObjectsFromArray(temp);
+		}else
+		{
+			result->removeAllObjects();
+		}
 		break;
 	case LIANDUI:
+		for (int i = low;i<=(A-num/2+1);i++)
+		{
+			temp = getPokersFromArray(getDuiZis(pks,1,i),num);
+			if (temp&&isYiLian(temp))
+			{
+				result->addObjectsFromArray(temp);
+			}
+		}
 		break;
 	case FEIJI:
+		for (int i = low;i<=(A-num/3+1);i++)
+		{
+			temp = getPokersFromArray(getDuiZis(pks,2,i),num);
+			if (temp&&isYiLian(temp,2))
+			{
+				result->addObjectsFromArray(temp);
+			}
+		}
 		break;
 	case SHUNZI:
+		for (int i = low;i<=(A-num+1);i++)
+		{
+			temp = getPokersFromArray(getDanZhangs(pks,i,caipai),num);
+			if (temp&&isYiLian(temp,1))
+			{
+				result->addObjectsFromArray(temp);
+			}
+		}
 		break;
 	case ZHADAN:
+		if(pks->count()>4)
+		{
+			Poker* pk;
+			Poker* pk1;
+			for(int i=0;i<pks->count()-4;i++)
+			{
+				pk = (Poker*)pks->objectAtIndex(i);
+				pk1 = (Poker*)pks->objectAtIndex(i+3);
+				if(pk->getNum() > low && pk->getNum() == pk1->getNum())
+				{
+					for(int j=i;j<i+4;j++)
+						result->addObject(pk);
+				}	
+			}
+		}
 		break;
 	case SHUANGWANG:
+		Poker* pk;
+		for(int i=0;i<pks->count();i++)
+		{
+			pk = (Poker*)pks->objectAtIndex(i);
+			if(pk->getNum() == DAGUI || pk->getNum() == XIAOGUI)
+				result->addObject(pk);
+		}
+		if(result->count() < 2)
+			result->removeAllObjects();
 		break;
 	default:
 		break;
@@ -514,10 +590,30 @@ OutData GameScene::analyPokers(CCArray* pks)
 	OutData data;
 	int count = pks->count();
 	data.num = count;
-	data.low = ((Poker*)pks->objectAtIndex(count-1))->getNum();
+	data.low = 0;
 	//data.pokers = pks;
 	data.paixing = analyPaixing(pks);
-
+	CCArray* temp;
+	switch(data.paixing)
+	{
+	case DANZHANG:
+	case DUIZI:
+	case SANTIAO:
+	case LIANDUI:
+	case SHUNZI:
+	case FEIJI:
+	case ZHADAN:
+	case SHUANGWANG:
+		data.low = ((Poker*)pks->objectAtIndex(count-1))->getNum();
+		break;
+	case SANDAIYI:
+	case SANDAIER:
+		temp = getPokersFromArray(getDuiZis(pks,2,0),3);
+		data.low = ((Poker*)temp->objectAtIndex(count-1))->getNum();
+		break;
+	default:
+		break;
+	}
 	return data;
 }
 PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
@@ -654,27 +750,25 @@ bool GameScene::isYiLian(CCArray* pks,int strip)
 	int count = pks->count();
 	if((count < strip) || (strip>1 && (count < 4 || count/strip < 2)) || (strip == 1 && count< 5))
 		return false;
-	bool isYilian = true;
 	Poker* pk;
 	Poker* pk1;
 
 	for (int i=0;i<count-strip;i+=strip)
 	{
 		pk = (Poker*)pks->objectAtIndex(i);
-		
+		pk1 = (Poker*)pks->objectAtIndex(i+strip);
+		if (pk->getNum()+1 != pk1->getNum())
+		{
+			return  false;
+		}
 		for(int j=i+1;j<i+strip;j++)
 		{
 			pk1 = (Poker*)pks->objectAtIndex(j);
 			if (pk->getNum() != pk1->getNum())
-				isYilian =  false;
-		}
-		pk1 = (Poker*)pks->objectAtIndex(i+strip);
-		if (pk->getNum()+1 != pk1->getNum())
-		{
-			isYilian =  false;
+				return  false;
 		}
 	}
-	return isYilian;
+	return true;
 }
 bool GameScene::ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent)
 {

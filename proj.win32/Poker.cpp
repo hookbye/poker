@@ -50,10 +50,7 @@ void Poker::setBack()
 		setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName("poker_6_0.png"));
 	}
 }
-void Poker::setPokerPriority(int num)
-{
-	//CCDirector::sharedDirector()->getTouchDispatcher()->setPriority(num,this); ;
-}
+
 void Poker::setSelect()
 {
 	if(m_isSel)
@@ -70,9 +67,9 @@ bool Poker::ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent)
 {
 	CCPoint pos = convertToNodeSpaceAR(pTouch->getLocation());
 	CCRect rect(-PokerW/2,-PokerH/2,PokerW,PokerH);
-
 	if(rect.containsPoint(pos)&&m_canTouch)
 	{
+		CCLog("poker :%d_%d,tag %d,in rect: %d,cantouch : %d",m_color,m_num,getTag(),rect.containsPoint(pos),m_canTouch);
 		setSelect();
 		return true;
 	}else
@@ -90,11 +87,14 @@ void Poker::ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent)
 void Poker::ccTouchCancelled(CCTouch* pTouch,CCEvent* pEvent)
 {
 }
-
+void Poker::setPokerPriority(int num)
+{
+	//CCDirector::sharedDirector()->getTouchDispatcher()->setPriority(num,this);
+}
 void Poker::onEnter()
 {
 	CCSprite::onEnter();
-	CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this,-1,true);
+	CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this,-1000,true);
 }
 void Poker::onExit()
 {
