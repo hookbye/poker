@@ -367,6 +367,7 @@ void Player::updatePokerLoc()
 		Poker* pk = (Poker*)pokers->objectAtIndex(i);
 		pk->removeFromParent();
 		addChild(pk);
+		pk->setIsSelect(false);
 		if(type != DECK)
 		{
 			int priority = -i-1;
