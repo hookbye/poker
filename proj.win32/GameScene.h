@@ -36,6 +36,10 @@ public:
 
 	void setNotOut(PlayerType tp,bool notOut = true);
 
+	void reset();
+	void newGame();
+	void win();
+
 	virtual bool ccTouchBegan(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchMoved(CCTouch* pTouch,CCEvent* pEvent);
 	virtual void ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent);
@@ -52,7 +56,6 @@ private:
 	Player* frontThree;
 	Player* deck;
 	
-	PokerClass paixing;
 	CCArray* pokers;
 	CCArray* players;
 	int turnCount;
@@ -61,8 +64,8 @@ private:
 	bool isCalling;
 	int callCount;
 	int roundCount;
-	OutData outData;
 	
 	CCLabelTTF* timer;
+	CCLayerColor* winLayer;
 };
 

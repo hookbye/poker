@@ -1,11 +1,12 @@
 #include "Poker.h"
 
 Poker::Poker():m_isFront(true),m_isSel(false),m_color(SPADE),
-	m_name(NULL),m_num(A),m_canTouch(false)
+	m_name(NULL),m_num(A),m_canTouch(false),touchPriority(1)
 {
 }
 Poker::~Poker()
 {
+	CC_SAFE_RELEASE(m_name);
 }
 bool Poker::initWithNumColor(PokerColor color,PokerNum num)
 {
@@ -14,6 +15,7 @@ bool Poker::initWithNumColor(PokerColor color,PokerNum num)
 		m_color = color;
 		m_num = num;
 		m_name = CCString::createWithFormat("poker_%d_%d.png",color,num);
+		m_name->retain();
 		CC_BREAK_IF(!CCSprite::initWithSpriteFrameName(m_name->getCString()));
 		
 		return true;
@@ -42,6 +44,7 @@ void Poker::setFront()
 	{
 		setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(m_name->getCString()));
 	}
+	m_isFront = true;
 }
 void Poker::setBack()
 {
@@ -49,6 +52,7 @@ void Poker::setBack()
 	{
 		setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName("poker_6_0.png"));
 	}
+	m_isFront = false;
 }
 
 void Poker::setSelect()
@@ -89,12 +93,12 @@ void Poker::ccTouchCancelled(CCTouch* pTouch,CCEvent* pEvent)
 }
 void Poker::setPokerPriority(int num)
 {
-	//CCDirector::sharedDirector()->getTouchDispatcher()->setPriority(num,this);
+	CCDirector::sharedDirector()->getTouchDispatcher()->setPriority(num,this);
 }
 void Poker::onEnter()
 {
 	CCSprite::onEnter();
-	CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this,-1000,true);
+	CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this,-1,true);
 }
 void Poker::onExit()
 {

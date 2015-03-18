@@ -98,7 +98,7 @@ void Player::getOutPokers()
 {
 	Poker* pk;
 	outs->removeAllObjects();
-	for(int i=pokers->count()-1;i>=0;i--)
+	for(int i=0;i<pokers->count();i++)
 	{
 		pk = (Poker*)pokers->objectAtIndex(i);
 		if(pk->getIsSelect())
@@ -131,6 +131,12 @@ void Player::outPokers()
 		pass();
 	}else
 	{
+		Poker* pk;
+		for(int i=0;i<outs->count();i++)
+		{
+			pk = (Poker*)outs->objectAtIndex(i);
+			pk->setFront();
+		}
 		outs->removeAllObjects();
 		resetPokers();
 		if(type != PLAYER)
@@ -147,7 +153,7 @@ void Player::genPai(OutData round)
 			if(pokers->count()>0)
 			{
 				outs->removeAllObjects();
-				outs->addObject(pokers->randomObject());//(randomOut());
+				outs->addObjectsFromArray(randomOut());
 				for(int i=0;i<outs->count();i++)
 					((Poker*)outs->objectAtIndex(i))->setIsSelect(true);
 				outPokers();
@@ -188,9 +194,53 @@ void Player::genPai(OutData round)
 
 CCArray* Player::randomOut()
 {
-	CCArray* result = gameMain->getPokersFromArray(gameMain->getDanZhangs(pokers),1);
-	if(result == NULL)
+	CCArray* result = NULL;
+
+	srand(time(NULL));
+	PokerClass rpx = (PokerClass)(rand()%NOTHING);//NOTHING为最大类型，取nothing 之下的类型
+	//debug paixing == 5
+	rpx = SANDAIER;
+	for(int i=0;i<NOTHING;i++)
 	{
+		int num = 0;
+		switch (rpx)
+		{
+		case DANZHANG:
+			num = 1;
+			break;
+		case DUIZI:
+		case SHUANGWANG:
+			num = 2;
+			break;
+		case SANTIAO:
+			num = 3;
+			break;
+		case SANDAIYI:
+		case ZHADAN:
+			num = 4;
+			break;
+		case SANDAIER:
+		case SIDAIYI:
+		case SHUNZI:
+			num = 5;
+			break;
+		case LIANDUI:
+		case FEIJI:
+		case SIDAIER:
+			num = 6;
+			break;
+		default:
+			break;
+		}
+		CCLog("paixing %d  ranom num is %d",rpx,num);
+		
+		result = gameMain->getPokersByCly(pokers,(PokerClass)((rpx+i)%NOTHING),num,0);
+		if(result && result->count() > 0)
+			break;
+	}
+	if(result == NULL || result->count()<1)
+	{
+		result = CCArray::create();
 		result->addObject(pokers->randomObject());
 	}
 	return result;
@@ -215,10 +265,10 @@ void Player::resetPokers()
 }
 void Player::pass()
 {
-	gameMain->pass();
-}
-void Player::buChu()
-{
+	if(pokers->count()>0)
+		gameMain->pass();
+	else
+		gameMain->win();
 }
 void Player::clearCards()
 {
@@ -316,28 +366,39 @@ void Player::updatePokerLoc()
 	{
 		Poker* pk = (Poker*)pokers->objectAtIndex(i);
 		pk->removeFromParent();
+		addChild(pk);
+		if(type != DECK)
+		{
+			int priority = -i-1;
+			pk->setPokerPriority(priority);
+		}
+		pk->setCanTouch(false);
 		switch (type)
 		{
 		case DECK:
 			//pk->setPosition(ccp(0,0));
 			if(status == DEALCARD)
+			{
 				pk->setPosition(ccp(0,0));
+				pk->setBack();
+			}
 			else
+			{
 				pk->setPosition(ccp(x+i*PokerW,y));
-			////pk->setBack();
+				pk->setFront();
+			}
+			
 			break;
 		case PLAYER:
-			//pk->setCanTouch(true);
-		case NPC:
 			pk->setCanTouch(true);
 		case FRONT:
+			pk->setFront();
+		case NPC:
+		case NPC1:
 		default:
 			pk->setPosition(ccp(x+i*PokerB,y));
-			//pk->setPokerPriority(i);
 			break;
-		}
-		pk->setTag(i);
-		addChild(pk,i);
+		}		
 	}
-	
+
 }

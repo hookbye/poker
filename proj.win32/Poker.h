@@ -3,7 +3,7 @@
 #include "Global.h"
 USING_NS_CC;
 class Poker :
-	public CCSprite,public CCTouchDelegate
+	public CCSprite,public CCStandardTouchDelegate
 {
 public:
 	Poker();
@@ -30,7 +30,9 @@ public:
 	CC_SYNTHESIZE(bool ,m_isFront,IsFront);
 	CC_SYNTHESIZE(bool ,m_isSel,IsSelect);
 	CC_SYNTHESIZE(bool ,m_canTouch,CanTouch);
-	 
+	CC_SYNTHESIZE(int  ,touchPriority,TouchPriority);
+	
+private:
 
 };
 

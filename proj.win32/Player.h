@@ -31,7 +31,6 @@ public:
 	PlayerStatus getStatus(){return status;}
 	void genPai(OutData round);
 	void pass();
-	void buChu();
 	CCArray* randomOut();
 private:
 	 ;

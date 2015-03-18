@@ -1,7 +1,7 @@
 #include "GameScene.h"
 #include "Tool.h"
 USING_NS_CC;
-GameScene::GameScene():turnCount(0),turnTime(0),callCount(0),paixing((PokerClass)0),
+GameScene::GameScene():turnCount(0),turnTime(0),callCount(0),
 	isDealing(true),isCalling(false),roundCount(0)
 {
 	pokers = CCArray::create();
@@ -18,6 +18,15 @@ GameScene::~GameScene()
 {
 	CC_SAFE_RELEASE(pokers);
 	CC_SAFE_RELEASE(players);
+	
+	CC_SAFE_RELEASE(player);
+	CC_SAFE_RELEASE(npcOne);
+	CC_SAFE_RELEASE(npcTwo);
+	CC_SAFE_RELEASE(frontOne);
+	CC_SAFE_RELEASE(frontTwo);
+	CC_SAFE_RELEASE(frontThree);
+	CC_SAFE_RELEASE(deck);
+	 
 }
 CCScene* GameScene::scene()
 {
@@ -51,7 +60,7 @@ bool GameScene::init()
     
 	pCloseItem->setPosition(ccp(origin.x + visibleSize.width - pCloseItem->getContentSize().width/2 ,
                                 origin.y + pCloseItem->getContentSize().height/2));
-
+	pCloseItem->setTag(1);
     CCMenu* pMenu = CCMenu::create(pCloseItem, NULL);
     pMenu->setPosition(CCPointZero);
     this->addChild(pMenu, 1);
@@ -72,6 +81,27 @@ bool GameScene::init()
 	this->setTouchEnabled(true);
 	this->setTouchMode(kCCTouchesOneByOne);
 	//this->scheduleUpdate();
+
+	// 胜负界面
+	winLayer = CCLayerColor::create(ccc4(122,122,122,128));
+	winLayer->retain();
+	winLayer->setVisible(false);
+	addChild(winLayer);
+	CCLabelTTF* resultLabel = CCLabelTTF::create(a2u("计时").c_str(),"Marker Felt",80);
+	resultLabel->setPosition(ccp(visibleSize.width/2,visibleSize.height/2));
+	winLayer->addChild(resultLabel,1,1);
+	CCMenuItemImage *pOKbtn = CCMenuItemImage::create(
+                                        "CloseNormal.png",
+                                        "CloseSelected.png",
+                                        this,
+                                        menu_selector(GameScene::menuCloseCallback));
+    
+	pOKbtn->setPosition(ccp(visibleSize.width/2,visibleSize.height/2 - PokerB*2));
+	pCloseItem->setTag(2);
+    CCMenu* winMenu = CCMenu::create(pOKbtn, NULL);
+    winMenu->setPosition(CCPointZero);
+	winLayer->addChild(winMenu, 1,2);
+
     return true;
 }
 bool GameScene::initPlayers()
@@ -153,15 +183,20 @@ bool GameScene::initPokers()
 		for(int j=0;j<13;j++)
 		{
 			poker = Poker::create((PokerColor)(i+1),(PokerNum)(j+1));
+			poker->retain();
 			pokers->addObject(poker);
-			//addChild(poker);
+			addChild(poker);
 		}
 	}
 	poker = Poker::create((PokerColor)5,(PokerNum)14);
+	poker->retain();
 	pokers->addObject(poker);
+	addChild(poker);
 
 	poker = Poker::create((PokerColor)5,(PokerNum)15);
+	poker->retain();
 	pokers->addObject(poker);
+	addChild(poker);
 
 	deck->getPokers()->addObjectsFromArray(pokers);
 	deck->updatePokerLoc();
@@ -223,7 +258,7 @@ void GameScene::movePokerTo(Player* src,Player* dest,int index)
 	dest->getPokers()->addObject(pk);
 	src->getPokers()->removeObject(pk);
 	pk->setTag(dest->getTag());	
-	CCMoveTo* move = CCMoveTo::create(0.1f,pos);
+	CCMoveTo* move = CCMoveTo::create(0.01f,pos);
 	CCCallFuncO* callback = CCCallFuncO::create(this,SEL_CallFuncO(&GameScene::dealPokerCallback),pk);
 	CCSequence* seq = CCSequence::createWithTwoActions(move,callback);
 	pk->runAction(seq);
@@ -289,7 +324,6 @@ void GameScene::setLandLord()
 	for(int i=0;i<3;i++)
 	{
 		pk = (Poker*)deck->getPokers()->objectAtIndex(i);
-		pk->setCanTouch(true);
 		arr->addObject(pk->copyPoker());
 	}
 	for(int i=0;i<3;i++)
@@ -448,7 +482,7 @@ CCArray* GameScene::getPokersFromArray(CCArray* pks,int num,bool fromTop)
 {
 	
 	int count = pks->count();
-	if (!pks || count<1)
+	if (!pks || count<1 || count < num)
 	{
 		return NULL;
 	}
@@ -477,7 +511,7 @@ CCArray* GameScene::getPokersFromArray(CCArray* pks,int num,bool fromTop)
 CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,bool caipai)
 {
 	int count = pks->count();
-	if (!pks || count<1)
+	if (!pks || count<1 || count < num)
 	{
 		return NULL;
 	}
@@ -512,15 +546,16 @@ CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,b
 		if (temp)
 		{
 			result->addObjectsFromArray(temp);
+			temp = getPokersFromArray(getDanZhangs(pks,0,caipai),num-3);
+			if (temp && temp->count() == num-3)
+			{
+				result->addObjectsFromArray(temp);
+			}else
+			{
+				result->removeAllObjects();
+			}
 		}
-		temp = getPokersFromArray(getDanZhangs(pks,0,caipai),num-3);
-		if (temp)
-		{
-			result->addObjectsFromArray(temp);
-		}else
-		{
-			result->removeAllObjects();
-		}
+		
 		break;
 	case LIANDUI:
 		for (int i = low;i<=(A-num/2+1);i++)
@@ -565,6 +600,7 @@ CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,b
 				{
 					for(int j=i;j<i+4;j++)
 						result->addObject(pk);
+					break;
 				}	
 			}
 		}
@@ -609,7 +645,7 @@ OutData GameScene::analyPokers(CCArray* pks)
 	case SANDAIYI:
 	case SANDAIER:
 		temp = getPokersFromArray(getDuiZis(pks,2,0),3);
-		data.low = ((Poker*)temp->objectAtIndex(count-1))->getNum();
+		data.low = ((Poker*)temp->objectAtIndex(0))->getNum();
 		break;
 	default:
 		break;
@@ -633,6 +669,10 @@ PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
 		{
 			return DUIZI;
 		}
+		if(pk->getNum()>TWO && pk1->getNum()>TWO)
+		{
+			return SHUANGWANG;
+		}
 	}else if (count == 3)
 	{
 		pk = (Poker*)pks->objectAtIndex(0);
@@ -655,22 +695,15 @@ PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
 			{
 				return SANDAIYI;
 			}
-		}
-		pk1 = (Poker*)pks->objectAtIndex(2);
-		if (pk->getNum() == pk1->getNum())
-		{
-			return SANDAIYI;
-		}
-		pk1 = (Poker*)pks->objectAtIndex(1);
-		if (pk->getNum() == pk1->getNum())
-		{
-			pk = (Poker*)pks->objectAtIndex(1); 
-			pk1 = (Poker*)pks->objectAtIndex(2);
+			pk = (Poker*)pks->objectAtIndex(1);
+			pk1 = (Poker*)pks->objectAtIndex(3);
 			if (pk->getNum() == pk1->getNum())
 			{
-				return LIANDUI;
+				return SANDAIYI;
 			}
+
 		}
+		
 	}
 	else if (count == 5)
 	{
@@ -681,26 +714,19 @@ PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
 			return SIDAIYI;
 		}
 
-		pk = (Poker*)pks->objectAtIndex(0);
+		pk = (Poker*)pks->objectAtIndex(1);
 		pk1 = (Poker*)pks->objectAtIndex(3);
 		if (pk->getNum() == pk1->getNum())
 		{
 			return SANDAIER;
 		}
-		bool shunZi = true;
-		for (int i=0;i<count-1;i++)
+		pk = (Poker*)pks->objectAtIndex(0);
+		pk1 = (Poker*)pks->objectAtIndex(2);
+		if (pk->getNum() == pk1->getNum())
 		{
-			pk = (Poker*)pks->objectAtIndex(i);
-			pk1 = (Poker*)pks->objectAtIndex(i+1);
-			if (pk->getNum()-1 != pk1->getNum())
-			{
-				shunZi = false;
-			}
+			return SANDAIER;
 		}
-		if (shunZi)
-		{
-			return SHUNZI;
-		}
+		
 		if (isYiLian(pks,1))
 		{
 			return SHUNZI;
@@ -782,13 +808,75 @@ void GameScene::ccTouchMoved(CCTouch* pTouch,CCEvent* pEvent)
 void GameScene::ccTouchEnded(CCTouch* pTouch,CCEvent* pEvent)
 {
 }
+void GameScene::reset()
+{
+	turnCount = 0;
+	turnTime = 0;
+	callCount = 0;
+	isDealing = true;
+	isCalling = false;
+	roundCount = 0;
+	roundData.paixing = NOTHING;
+	roundData.num = 0;
+	roundData.low = 0;
+
+	deck->clearCards();
+	player->clearCards();
+	npcOne->clearCards();
+	npcTwo->clearCards();
+	frontOne->clearCards();
+	frontTwo->clearCards();;
+	frontThree->clearCards();
+	 
+	deck->setStatus(DEALCARD);
+	player->setStatus(DEALCARD);
+	npcOne->setStatus(DEALCARD);
+	npcTwo->setStatus(DEALCARD);
+	frontOne->setStatus(DEALCARD);
+	frontTwo->setStatus(DEALCARD);;
+	frontThree->setStatus(DEALCARD);
+	 
+	deck->getPokers()->addObjectsFromArray(pokers);
+	deck->setStatus(DEALCARD);
+	deck->updatePokerLoc();
+
+}
+void GameScene::newGame()
+{
+	reset();
+	checkPokers();
+	dealPokers();
+}
+void GameScene::win()
+{
+	Player* winner = (Player*)players->objectAtIndex(turnCount%3);
+	CCLabelTTF* winLabel = (CCLabelTTF*)winLayer->getChildByTag(1);
+	if(winner->getType() == PLAYER)
+	{
+		winLabel->setString(a2u("胜利！！").c_str());
+		winLabel->setColor(ccc3(229,60,54));
+	}
+	else
+	{
+		winLabel->setString(a2u("失败！！").c_str());
+		winLabel->setColor(ccc3(76,81,76));
+	}
+	winLayer->setVisible(true);
+}
 void GameScene::menuCloseCallback(CCObject* pSender)
 {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT) || (CC_TARGET_PLATFORM == CC_PLATFORM_WP8)
 	CCMessageBox("You pressed the close button. Windows Store Apps do not implement a close button.","Alert");
 #else
     //CCDirector::sharedDirector()->end();
-	dealPokers();
+	int tag = ((CCNode*)pSender)->getTag();
+	if(tag == 2)
+		newGame();
+	else
+	{
+		reset();
+		winLayer->setVisible(false);
+	}
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     exit(0);
 #endif
