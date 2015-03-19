@@ -251,8 +251,6 @@ void GameScene::movePokerTo(Player* src,Player* dest,int index)
 		pk = (Poker*)src->getPokers()->objectAtIndex(index);
 	else
 		pk = (Poker*)src->getPokers()->randomObject();
-	src->getPokers()->removeObject(pk);
-	Player* temp = dest;
 	
 	pos = src->convertToNodeSpaceAR(dest->getPosition());
 	dest->getPokers()->addObject(pk);
@@ -356,8 +354,8 @@ void GameScene::pass()
 	temp = ((Player*)players->objectAtIndex(turnCount%3));
 	if(isCalling && callCount < 3)
 	{
-		temp->setStatus(CALL);
 		callCount++;
+		temp->setStatus(CALL);
 	}
 	else
 	{
@@ -406,11 +404,14 @@ void GameScene::update(float dt)
 
 CCArray* GameScene::getDanZhangs(CCArray* pks,int low,bool caipai)
 {
-	int count = pks->count();
-	if (!pks || count<1)
+	
+	if (!pks)
 	{
 		return NULL;
 	}
+	int count = pks->count();
+	if(count<1 )
+		return NULL;
 	CCArray* result = CCArray::create();
 	Poker* pk;
 	Poker* pk1;
@@ -439,7 +440,7 @@ CCArray* GameScene::getDanZhangs(CCArray* pks,int low,bool caipai)
 	}
 	if(result->count() < 1 && caipai)
 	{
-		for(int i=count-1;i>=0;i++)
+		for(int i=count-1;i>=0;i--)
 		{
 			pk = (Poker*)pks->objectAtIndex(i);
 			if(pk->getNum() > low)
@@ -453,11 +454,13 @@ CCArray* GameScene::getDanZhangs(CCArray* pks,int low,bool caipai)
 }
 CCArray* GameScene::getDuiZis(CCArray* pks,int strip,int low)
 {
-	int count = pks->count();
-	if (!pks || count<1)
+	
+	if (!pks || pks->count()<1)
 	{
 		return NULL;
 	}
+	int count = pks->count();
+	
 	CCArray* result = CCArray::create();
 	Poker* pk;
 	Poker* pk1;
@@ -481,11 +484,14 @@ CCArray* GameScene::getDuiZis(CCArray* pks,int strip,int low)
 CCArray* GameScene::getPokersFromArray(CCArray* pks,int num,bool fromTop)
 {
 	
-	int count = pks->count();
-	if (!pks || count<1 || count < num)
+	
+	if (!pks ) 
 	{
 		return NULL;
 	}
+	int count = pks->count();
+	if(count<1 || count < num)
+		return NULL;
 	CCArray* result = CCArray::create();
 	Poker* pk;
 	
@@ -510,11 +516,13 @@ CCArray* GameScene::getPokersFromArray(CCArray* pks,int num,bool fromTop)
 }
 CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,bool caipai)
 {
-	int count = pks->count();
-	if (!pks || count<1 || count < num)
+	if (!pks )
 	{
 		return NULL;
 	}
+	int count = pks->count();
+	if(count<1 || count < num)
+		return NULL;
 	CCArray* result = CCArray::create();
 	CCArray* temp;
 	switch (cly)
@@ -578,12 +586,20 @@ CCArray* GameScene::getPokersByCly(CCArray* pks,PokerClass cly,int num,int low,b
 		}
 		break;
 	case SHUNZI:
-		for (int i = low;i<=(A-num+1);i++)
+		if(low <= 10 )
 		{
-			temp = getPokersFromArray(getDanZhangs(pks,i,caipai),num);
-			if (temp&&isYiLian(temp,1))
+			temp = getDanZhangs(pks,0,caipai);
+			if(temp->count() < num )
+				break;
+			for (int i = low;i<=(A-num+1);i++)
 			{
-				result->addObjectsFromArray(temp);
+				temp = getDanZhangs(pks,i,caipai);
+				temp = getPokersFromArray(temp,num);
+				if (temp&&isYiLian(temp,1))
+				{
+					result->addObjectsFromArray(temp);
+					break;
+				}
 			}
 		}
 		break;
@@ -654,7 +670,6 @@ OutData GameScene::analyPokers(CCArray* pks)
 }
 PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
 {
-	PokerClass px = NOTHING;
 	int count = pks->count();
 	Poker* pk;
 	Poker* pk1;
@@ -766,7 +781,8 @@ PokerClass GameScene::analyPaixing(CCArray* pks,bool re)
 			pk = (Poker*)pks->objectAtIndex(i);
 			reverseArray->addObject(pk);
 		}
-		analyPaixing(reverseArray,true);
+		//PokerClass rpx = analyPaixing(reverseArray,true);
+		return analyPaixing(reverseArray,true);
 	}
 	
 	return NOTHING;
@@ -820,21 +836,13 @@ void GameScene::reset()
 	roundData.num = 0;
 	roundData.low = 0;
 
-	deck->clearCards();
-	player->clearCards();
-	npcOne->clearCards();
-	npcTwo->clearCards();
-	frontOne->clearCards();
-	frontTwo->clearCards();;
-	frontThree->clearCards();
-	 
-	deck->setStatus(DEALCARD);
-	player->setStatus(DEALCARD);
-	npcOne->setStatus(DEALCARD);
-	npcTwo->setStatus(DEALCARD);
-	frontOne->setStatus(DEALCARD);
-	frontTwo->setStatus(DEALCARD);;
-	frontThree->setStatus(DEALCARD);
+	deck->reset();
+	player->reset();
+	npcOne->reset();
+	npcTwo->reset();
+	frontOne->reset();
+	frontTwo->reset();;
+	frontThree->reset();
 	 
 	deck->getPokers()->addObjectsFromArray(pokers);
 	deck->setStatus(DEALCARD);
@@ -851,7 +859,7 @@ void GameScene::win()
 {
 	Player* winner = (Player*)players->objectAtIndex(turnCount%3);
 	CCLabelTTF* winLabel = (CCLabelTTF*)winLayer->getChildByTag(1);
-	if(winner->getType() == PLAYER)
+	if(winner->getType() ==  PLAYER && player->getIsLord())
 	{
 		winLabel->setString(a2u("Ê¤Àû£¡£¡").c_str());
 		winLabel->setColor(ccc3(229,60,54));

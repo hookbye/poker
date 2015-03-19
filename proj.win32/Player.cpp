@@ -15,6 +15,14 @@ Player::~Player(void)
 	CC_SAFE_RELEASE(pokers);
 	CC_SAFE_RELEASE(outs);
 }
+void Player::reset()
+{
+	status = DEALCARD;
+	isLord = false;
+	callScore = 0;
+	clearCards();
+	setStatus(DEALCARD);
+}
 bool Player::init()
 {
 	do
@@ -88,6 +96,7 @@ bool Player::canBeOut(OutData round)
 	//getOutPokers();
 	PokerClass pc = gameMain->analyPaixing(outs);
 	OutData ground = gameMain->getRoundData();
+	
 	if ((pc != NOTHING) && (ground.paixing == NOTHING || (round.paixing == ground.paixing && round.num == ground.num && round.low > ground.low)))
 	{
 		return true;
@@ -110,6 +119,7 @@ void Player::outPokers()
 	getOutPokers();
 	if(outs->count()<1)
 		return;
+	gameMain->sortPokers(outs);
 	OutData round = gameMain->analyPokers(outs);
 	if(canBeOut(round))
 	{
@@ -192,6 +202,15 @@ void Player::genPai(OutData round)
 	}
 }
 
+void Player::callLord()
+{
+	srand(time(NULL));
+	callScore = rand()%4;
+	if(callScore == 3)
+		gameMain->setLandLord();
+	else
+		pass();
+}
 CCArray* Player::randomOut()
 {
 	CCArray* result = NULL;
@@ -232,7 +251,7 @@ CCArray* Player::randomOut()
 		default:
 			break;
 		}
-		CCLog("paixing %d  ranom num is %d",rpx,num);
+		CCLog("paixing %d  ranom num is %d",(rpx+i)%NOTHING,num);
 		
 		result = gameMain->getPokersByCly(pokers,(PokerClass)((rpx+i)%NOTHING),num,0);
 		if(result && result->count() > 0)
@@ -298,7 +317,10 @@ void Player::setStatus(PlayerStatus st)
 	case CALL:
 		turnMenu->setVisible(false);
 		roundLabel->setVisible(false);
-		callMenu->setVisible(true);
+		if(type == PLAYER)
+			callMenu->setVisible(true);
+		else
+			callLord();
 		break;
 	case TOBEOUT:
 		roundLabel->setVisible(false);
@@ -329,7 +351,6 @@ void Player::sortPokers()
 	int count = pokers->count();
 	if(count < 2)
 		return;
-	
 	Poker* pk1;
 	Poker* pk2;
 	for(int i=0;i<count-1;i++)
@@ -385,10 +406,10 @@ void Player::updatePokerLoc()
 			}
 			else
 			{
-				pk->setPosition(ccp(x+i*PokerW,y));
-				pk->setFront();
+				pk->setPosition(ccp(x+i*PokerW,y+20));
+				//pk->setColor(DIAMOND);
 			}
-			
+			pk->setCanTouch(false);
 			break;
 		case PLAYER:
 			pk->setCanTouch(true);
@@ -396,6 +417,7 @@ void Player::updatePokerLoc()
 			pk->setFront();
 		case NPC:
 		case NPC1:
+			//pk->setFront();
 		default:
 			pk->setPosition(ccp(x+i*PokerB,y));
 			break;

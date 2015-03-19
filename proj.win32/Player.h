@@ -14,6 +14,7 @@ public:
 
 	void menuCallback(CCObject* pSender);
 	bool init();
+	void reset();
 	CREATE_FUNC(Player);
 	CC_SYNTHESIZE(CCArray*,pokers,Pokers);
 	CC_SYNTHESIZE(CCArray*,outs,Outs);
@@ -31,7 +32,9 @@ public:
 	PlayerStatus getStatus(){return status;}
 	void genPai(OutData round);
 	void pass();
+
 	CCArray* randomOut();
+	void callLord();
 private:
 	 ;
 	PlayerStatus status;
