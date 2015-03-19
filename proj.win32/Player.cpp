@@ -218,7 +218,7 @@ CCArray* Player::randomOut()
 	srand(time(NULL));
 	PokerClass rpx = (PokerClass)(rand()%NOTHING);//NOTHING为最大类型，取nothing 之下的类型
 	//debug paixing == 5
-	rpx = SANDAIER;
+	//rpx = SANDAIER;
 	for(int i=0;i<NOTHING;i++)
 	{
 		int num = 0;
@@ -408,6 +408,7 @@ void Player::updatePokerLoc()
 			{
 				pk->setPosition(ccp(x+i*PokerW,y+20));
 				//pk->setColor(DIAMOND);
+				pk->setFront();
 			}
 			pk->setCanTouch(false);
 			break;

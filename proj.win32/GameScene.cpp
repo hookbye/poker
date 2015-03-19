@@ -861,12 +861,12 @@ void GameScene::win()
 	CCLabelTTF* winLabel = (CCLabelTTF*)winLayer->getChildByTag(1);
 	if(winner->getType() ==  PLAYER && player->getIsLord())
 	{
-		winLabel->setString(a2u("Ê¤Àû£¡£¡").c_str());
+		winLabel->setString(a2u("Ê¤Àû!!").c_str());
 		winLabel->setColor(ccc3(229,60,54));
 	}
 	else
 	{
-		winLabel->setString(a2u("Ê§°Ü£¡£¡").c_str());
+		winLabel->setString(a2u("Ê§°Ü!!").c_str());
 		winLabel->setColor(ccc3(76,81,76));
 	}
 	winLayer->setVisible(true);
