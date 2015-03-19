@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "cocos2d.h"
-#define TURNTIME 4
+#define TURNTIME 10
 const int PokerW = 71;
 const int PokerH = 96;
 const int PokerB = 20;

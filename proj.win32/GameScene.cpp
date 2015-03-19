@@ -80,7 +80,7 @@ bool GameScene::init()
 
 	this->setTouchEnabled(true);
 	this->setTouchMode(kCCTouchesOneByOne);
-	//this->scheduleUpdate();
+	this->scheduleUpdate();
 
 	// Ê¤¸º½çÃæ
 	winLayer = CCLayerColor::create(ccc4(122,122,122,128));
@@ -270,12 +270,12 @@ void GameScene::dealPokers()
 		deck->setStatus(DISPLAY);
 		deck->updatePokerLoc();
 		//debug not update
-		if (player->getStatus() == DEALCARD)
+		/*if (player->getStatus() == DEALCARD)
 		{
 			turnCount = player->getTag();
 			player->setStatus(CALL);
 			callCount++;
-		}
+		}*/
 		
 		return;
 	}
